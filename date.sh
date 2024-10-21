@@ -15,11 +15,14 @@ then
   case "${1-}" in
 
     ( delta )
+        [[ $# -gt 2 ]] || set -- "$1" "${2:?}" "$(date --iso=date)"
         stderr echo "From $2 to $3" &&
         ts1=$(date -d "${2:?}" '+%s') &&
         ts2=$(date -d "${3:?}" '+%s') &&
         ds=$(( ts2 - ts1 )) &&
         printf "%'d seconds\n" "$ds" &&
+        ds=$(( ts2 - ts1 )) &&
+        printf "%'d days\n" "$(( ds / 86400 ))" &&
         {
           [[ ${ds:0:1} = - ]] && o=1 pref= suf=" before" || o=0 pref= suf=" after"
         } &&

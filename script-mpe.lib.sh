@@ -37,7 +37,11 @@ fun_def noop :\;
 fun_w1c () { "$@"; }
 fun_w1cnz () { test -n "$("$@")" && echo "$_"; }
 
-ignore () { "$@" || true; }
+ignore ()
+{
+  "$@" || true
+}
+
 
 sh_fun () #
 {
@@ -61,7 +65,7 @@ sh_funbody () # ~ <Ref-fun> <...> # alias:sh-fbody,fun-body
 sh_fclone () # ~ <New-name> <Copy-ref> # alias:fun-clone
 {
   : source "script-mpe.lib.sh"
-  : "${1:?sh-fclone: New function name expected}"
+  : "${1:?$FUNCNAME: New function name expected}"
   if_ok "$_ () {
 $(sh_funbody "${2:?sh-fclone: Reference function name expected}")
 }" &&
@@ -275,8 +279,8 @@ sh_var_copy () # ~ <New-var> <From-ref>
 sh_adef () # ~ <Array> <Key>
 {
   : source "script-mpe.lib.sh"
-  sh_arr "${1:?}" &&
-  : "${1:?}[${2:?}]" &&
+  sh_arr "${1:?"$(sys_exc script-mpe.lib:sh-adef@1:array)"}" &&
+  : "${1:?}[${2:?"$(sys_exc script-mpe.lib:sh-adef@2:key)"}]" &&
   test "(unset)" != "${!_:-(unset)}"
 }
 
@@ -340,11 +344,18 @@ sh_caller ()
   echo "$_"
 }
 
+# Read output lines of command onto array, appending after existing items
 sys_execmap () # ~ <Var-name> <Cmd...> # Read out (lines) from command into array
 {
   : source "script-mpe.lib.sh"
+  : "${1:?"$(sys_exc sys-execmap:array-name)"}"
+  : "${2:?"$(sys_exc sys-execmap:command)"}"
+  local outname=${1} offset
+  local -n __sys_execmap_arr=${outname}
+  offset=${#__sys_execmap_arr[@]}
   if_ok "$("${@:2}")" &&
-  <<< "$_" mapfile -t "$1"
+  test -n "$_" &&
+  <<< "$_" mapfile -O ${offset:-0} ${mapfile_f:--t} ${outname}
 }
 # Copy: sys.lib.sh
 

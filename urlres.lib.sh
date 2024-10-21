@@ -1,8 +1,11 @@
 ### URLRes: manage local copies for URL's
 
+# FIXME: should really rename part url{res->tpl},
+# also use web/urlref api better
+
 urlres_lib__load ()
 {
-  lib_require hash web || return
+  lib_require hash str web || return
   : "${CACHE_DIR:=.meta/cache}"
   #: "${urlres_cachekey_format:=cksums}"
   #: "${urlres_cachekey_algo:=md5}"
@@ -22,7 +25,7 @@ urlres_lib__init ()
 }
 
 
-# Retrieve resource.
+# Retrieve resource URL using cUrl backend (http-deref*)
 urlres () # ~ <Key> [<Inputs...>]
 {
   declare lk=${lk:-}:urlres
@@ -58,7 +61,7 @@ urlres_cachekey_plain () # ~ <Key> <Inputs...>
 
 urlres_clear () # ~ <...>
 {
-  unset key kid pattern format format_inputs inputs url cache_name cachef etagf
+  unset urlres_{key,keyid} pattern format format_inputs inputs url cache_name cachef etagf
 }
 
 # Set url, and paths of cache files for entity and etag.
@@ -68,16 +71,18 @@ urlres_files () # ~ <urlres-ref-args...>
   : "${cachep:="${CACHE_DIR:?}/${cache_name:?}"}"
   : "${etagf:="${cachep:?}.etag"}"
   cachef_ext=${urlres_fext:-}
-  test -n "$cachef_ext" || {
+  [[ $cachef_ext ]] || {
     # Best effort to get filename extension, try URL and else do HEAD request.
-    fn="${url//*\/}"
-    : "${fn//*.}"
-    test "$_" != "$fn" -a -n "$_" && cachef_ext=.$_ || {
+    cachef_ext=$(urlref_abs "$url" .filename-extension) || {
+
       : "${headf:="${CACHE_DIR:?}/$cache_name.about"}"
       # XXX: assume here res mt doesnt change (needs cache-v as well)
       test -e "$headf" || {
-        web_about "$url" "$headf" || return
+        web_about "$url" "$headf" ||
+          $LOG error ":web-about" "Retrieving filename extension for URL" E$? $? || return
       }
+      file -s "$headf"
+      stderr declare -p headf
       if_ok "$(< "${headf:?}" grep -oiP '^content-type: \K.*$')" &&
       test -n "$_" && {
         : "${_%%; *}"
@@ -91,6 +96,7 @@ urlres_files () # ~ <urlres-ref-args...>
 # Process arguments and set url, but do nothing else.
 urlres_ref () # ~ <Key> <Inputs...> # Produce URL reference
 {
+  # Reset env if key doesnt match current
   test "${1:-${urlres_id:?}}" = "${urlres_id:-}" || {
     test -z "${urlres_id:-}" || {
       urlres_clear
@@ -98,31 +104,34 @@ urlres_ref () # ~ <Key> <Inputs...> # Produce URL reference
     }
     urlres_parse_arg "$@" || return
   }
+  # Retrieve env from urlres-store (XXX: should be in above clause?)
   urlres_ref_${urlres_store:-env} &&
+  # Output URL
   urlres_format
 }
 
 # Take key to retrieve URL pattern and options from env variable(s)
 urlres_ref_env () # ~ <...>
 {
-  declare lk=${lk:-}:ref-env
+  declare lk=${lk:-}:ref-env key=${urlres_key:?} kid=${urlres_keyid:?}
   pattern=${!kid:-}
   test -n "$pattern" && {
-    $LOG debug "$lk" "Found pattern spec at key '$kid'" "${_//%/%%}"
-    format=${pattern/:*}
-    : "$(( ${#format} + 1 ))"
-    pattern="${pattern:$_}"
-    format_inputs=${pattern/:*}
-    : "$(( ${#format_inputs} + 1 ))"
-    pattern=${pattern:$_}
+    $LOG debug "$lk" "Found pattern spec at key '$key'" "${_//%/%%}"
+    local spec=${pattern}
+    format=${spec/:*}
+    spec="${spec:$(( ${#format} + 1 ))}"
+    : "${format:=printf}"
+    format_inputs=${spec/:*}
+    pattern=${spec:$(( ${#format_inputs} + 1 ))}
+    : "${format_inputs:=urlencode}"
   } || {
     : "${kid}_format"
     format=${!_:-printf}
     : "${kid}_format_inputs"
-    format_inputs=${!_:-}
+    format_inputs=${!_:-urlencode}
     : "${kid}_pattern"
     pattern=${!_:?Pattern expected for \'$key\'}
-    $LOG info "$lk" "Found pattern at basename" "$kid"
+    $LOG info "$lk" "Found pattern at basename" "$key"
   }
 }
 
@@ -130,14 +139,14 @@ urlres_ref_env () # ~ <...>
 # was specified.
 urlres_format () # ~ <...>
 {
-  test -z "$format_inputs" || {
+  [[ ! $format_inputs ]] || {
     local i
     for i in ${!inputs[*]}
     do
       inputs[i]=$($format_inputs "${inputs[i]}") || return
     done
   }
-  url=$(uc_format_${format:?} "${pattern:?}" "${inputs[@]:?}")
+  url=$(strfmt_${format:?} "${pattern:?}" "${inputs[@]:?}")
 }
 
 # Parse key and inputs, so that URL pattern can be retrieved. Also sets
@@ -145,7 +154,7 @@ urlres_format () # ~ <...>
 # later.
 urlres_parse_arg () # ~ <Key> <Inputs...>
 {
-  key=${1:?} kid="${1//[:-]/_}"
+  urlres_key=${1:?} urlres_keyid="${1//[:-]/_}"
 
   declare -ga inputs=( "${@:2}" )
 
