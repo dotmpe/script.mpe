@@ -334,6 +334,7 @@ sh_noerr ()
   std_noerr "$@" || true
 }
 
+# see also sys-callers
 sh_caller ()
 {
   : source "script-mpe.lib.sh"

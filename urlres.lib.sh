@@ -19,7 +19,7 @@ urlres_lib__init ()
 {
   true # XXX: Update lib.lib, and move lib-require here
   test -d "${CACHE_DIR:?}" ||
-    $INIT_LOG alert "" "No such directory" "$_" 1
+    $INIT_LOG alert ":urlres-lib" "No such directory" "$_" 1
   ! sys_debug -dev -debug -init ||
     $LOG notice "" "Initialized urlres.lib" "$(sys_debug_tag)"
 }

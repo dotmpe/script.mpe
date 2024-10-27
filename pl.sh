@@ -131,8 +131,8 @@ pl_aliasargv ()
 
 pl_loadenv ()
 {
-  : "${PLTABSDIR:=${META_DIR:-.meta}/tab}"
-  : "${PLDIR:=${META_DIR:-.meta}/cache}"
+  : "${PLTABSDIR:=${METADIR:-.meta}/tab}"
+  : "${PLDIR:=${METADIR:-.meta}/cache}"
   #shellcheck source=pl.lib.sh
   . ${US_BIN:?}/pl.lib.sh
 }
