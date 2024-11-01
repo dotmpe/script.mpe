@@ -1,4 +1,6 @@
 
+# web: basic routines around OS utils to access web (HTTP internet)
+
 web_lib__load ()
 {
   #lib_require str:fnmatch
@@ -139,13 +141,15 @@ json_list_has_objects()
 # NOTE: Initial type for absolute URL references (parts getter) [4324]
 url_abs () # ~ <URLID> <Part-switch> ...
 {
+  # Get actual URL value using by-name variable, and build 'self' reference
   local -n __url_abs_url{,id}
   local self urlrefs_copy=false
   urlrefs_byid "${1:?}" __url_abs_url{id,} &&
   [[ ${__url_abs_urlid:?} = "${1:?}" ]] ||
     $LOG error :url-abs "Retrieving URL instance" E$?:$1 $? || return
   self="url_abs $__url_abs_urlid "
-
+  # XXX: could do something else based on wether URLID is numeric or otherwise
+  # XXX: resolve URL string part, TODO: sub-composition
   case "${2:-.global}" in
   ( .authority | .auth ) # Authority (without / or // prefix)
       if_ok "$($self.netpath-npv)" &&
@@ -214,9 +218,17 @@ url_abs () # ~ <URLID> <Part-switch> ...
   esac
 }
 
+# XXX: either use urlref (urlref-abs or -rel) to resolve canonical, or as-is
+# literal URL set var-name to point to instance.
+url_getref () # ~ Context Ref Var-name
+{
+  false
+}
+
 urlbase () # ~ <URL>
 {
   : "${1:?"$(sys_exc urlbase:urlref)"}"
+  TODO $FUNCNAME
 }
 
 urldecode () # ~ <String>
@@ -262,7 +274,10 @@ urllink () # ~ <Rel> <Rev> <URL>
   false
 }
 
-# TODO: resolve given string to urlref instance.
+# TODO: resolve given string to urlref instance. This can be relative or
+# or absolute references XXX: normalize literal to absolute/canonical refs
+# not just given path base, but by scheme, auth (userinfo+hostport/domain)
+# as well as complete netpath contexts as well?
 urlref () # ~ [<Home-url>] <Reference> [<Part-switch>]
 {
   false
@@ -281,6 +296,11 @@ urlref_abs () # ~ <URL> [<Part-switch>] ...
   url_abs "${__urlref_abs_urlid:?}" "${2:-.global}"
 }
 
+urlref_byid () # ~ <URLREFID>
+{
+  false
+}
+
 urlref_rel () # ~ <Home-url> <Relative-part>
 {
   false
@@ -289,13 +309,13 @@ urlref_rel () # ~ <Home-url> <Relative-part>
 # Return unique instance Id for given reference (no normalization whatsoever,
 # just dynamic, literal shell Id for web Id mapping). Default is to use by-name
 # references to actual lookup arays, use urlrefs-copy or -value to get a value.
-urlrefs () # ~ <URL> [idrefvar] [urlrefvar]
+urlrefs () # ~ <Literal-URL> [idrefvar] [urlrefvar]
 {
   urlrefs_assert "$1" &&
   urlrefs_byurl "$@"
 }
 
-urlrefs_assert () # ~ <URL> # Store new id map if none found yet
+urlrefs_assert () # ~ <Literal-URL> # Store new id map if none found yet
 {
   local __urlref_url=${1:?}
   [[ ${urlref_urlid["${__urlref_url}"]+set} ]] || {
@@ -323,8 +343,10 @@ urlrefs_byid () # ~ <URLID> [idname] [urlname]
   }
 }
 
-# Get ref or copy by looking up URL and build ref back using ID index.
-urlrefs_byurl () # ~ <URL> [idname] [urlname]
+# Get ref or copy of URL by looking up the literal value (using urlref-urlid
+# [<url>]=>id) and then build ref back using that ID index. Sets both URLID and
+# URL variables (or as names given) the way as specified by urlrefs-copy mode.
+urlrefs_byurl () # ~ <Literal-URL> [idname] [urlname]
 {
   local __urlref_url=${1:?} &&
   ! "${urlrefs_copy:-false}" && {
@@ -338,7 +360,7 @@ urlrefs_byurl () # ~ <URL> [idname] [urlname]
   }
 }
 
-urlrefs_value () # ~ <URL> [<idvar] [urlvar]
+urlrefs_value () # ~ <Literal-URL> [<idvar] [urlvar]
 {
   urlrefs_copy=true urlrefs "$@"
 }

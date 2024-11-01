@@ -1,3 +1,5 @@
+# Examples using instances of url and related api
+
 lib_require web
 lib_init web
 
@@ -8,7 +10,15 @@ do_echo ()
   stderr echo "url<$urlid> := \"$url\""
 }
 
-do_inspect1 ()
+do_inspect_byurl0 ()
+{
+  local -n url urlid
+  urlrefs_byurl "${_url:?}" url{id,} || return
+  stderr echo declare -n url=${!url}
+  stderr echo declare -n urlid=${!urlid}
+}
+
+do_inspect_byurl ()
 {
   local id
   id=${urlref_urlid["${_url:?}"]}
@@ -21,7 +31,7 @@ do_inspect1 ()
   done
 }
 
-do_inspect2 ()
+do_inspect_byurlid ()
 {
   local -n url urlid
   urlrefs_byurl "${_url:?}" url{id,} || return
@@ -31,7 +41,6 @@ do_inspect2 ()
   do
     if_ok "$(url_abs "$urlid" .$g)" && echo ".$g: $_" || echo no $g
   done
-  echo
 }
 
 # Is '//' useful or not?
@@ -44,6 +53,10 @@ urls=(
 for _url in "${urls[@]}"
 do
   urlrefs_assert "${_url:?}"
+  do_echo
+  #do_inspect_byurl0
+  #do_inspect_byurlid
   #do_inspect1
-  do_inspect2
+  #do_inspect2
+  echo
 done

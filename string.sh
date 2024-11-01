@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 
 string_load ()
 {
@@ -99,7 +100,19 @@ function cpad {
 
 
 
-if [ "$(basename -- "$0")" == "string" ]
+if [[ "${0##*/}" == "string-util" ]]
+then
+
+  case "${1-}" in
+  ( if-pref | if-prefix )
+      [[ "${2:?}" = "${3:0:${#2}}" ]]
+    ;;
+
+  ( * ) exit 64 ;;
+
+  esac
+
+elif [[ "${0##*/}" == "string" ]]
 then
   string_load
 
