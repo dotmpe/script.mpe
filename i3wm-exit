@@ -101,8 +101,8 @@ case "${1:-}" in
     ( "switch" ) dm-tool switch-to-greeter ;;
     ( "guest" ) dm-tool switch-to-guest ;;
 
-    ( "suspend" ) lock && pm_suspend_${SYS_PM} ;;
-    ( "hibernate" ) lock && pm_hibernate_${SYS_PM} ;;
+    ( "suspend" ) i3wm_userlock && pm_suspend_${SYS_PM} ;;
+    ( "hibernate" ) i3wm_userlock && pm_hibernate_${SYS_PM} ;;
     ( "reboot" ) pm_reboot_${SYS_PM} ;;
     ( "shutdown" ) pm_shutdown_${SYS_PM} ;;
 
