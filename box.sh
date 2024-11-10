@@ -522,7 +522,7 @@ box__here()
 main-init-env \
   INIT_ENV="init-log strict 0 0-src 0-u_s dev ucache scriptpath std box" \\
   INIT_LIB="\$default_lib str-htd logger-theme main box src-htd ctx-main ctx-std"
-main-local \\
+main-local \
   box_sock= box_lib=
 main-init box_sock=/tmp/box-serv.sock
 main-lib \

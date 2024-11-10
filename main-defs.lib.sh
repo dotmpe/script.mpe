@@ -8,9 +8,7 @@
 main_main() # Base Default-Subcmd Script-Aliases
 {
   test $# -gt 0 -a $# -le 3 || return
-  test -n "${main_id-}" || {
-    str_vword main_id "$1"
-  }
+  test -n "${main_id-}" || str_vword main_id "$1" || return
 
   test -n "${main_script-}" || main_script="\$0"
   test -n "${main_base-}" || main_base="\$(basename \$0 .sh)"

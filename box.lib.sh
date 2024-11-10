@@ -13,7 +13,7 @@ box_lib__init()
 {
   test "${box_lib_init-}" = "0" && return
 
-  box_run_sh_test || return
+  box_posixly_correct || return
   lib_assert src || return
 
   test -z "${DEBUG-}" || {

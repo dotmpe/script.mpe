@@ -76,21 +76,6 @@ $(sh_funbody "${2:?sh-fclone: Reference function name expected}")
 . "${U_S:?}/tool/sh/part/sh-mode.sh"
 
 
-str_globmatch () # ~ <String> <Glob-pattern>
-{
-  case "${1:?}" in ${2:?} ) ;; ( * ) false ;; esac
-}
-fun_def fnmatch 'str_globmatch "${2:?fnmatch: \$2 not set}" "${1:?fnmatch: \$1 not set}";'
-
-str_wordmatch () # ~ <Word> <Strings...> # Non-zero unless word appears
-{
-  : source "script-mpe.lib.sh"
-  [[ 2 -le $# ]] || return ${_E_GAE:-193}
-  case " ${*:2} " in
-    ( *" ${1:?} "*) ;; #  | *" ${1:?} " | " ${1:?} "*) ;;
-    ( * ) false ; esac
-}
-
 # Helper to generate true or false command.
 std_bool () # ~ <Cmd...> # Print true or false, based on command status
 {
@@ -252,6 +237,43 @@ stderr_stat ()
     printf "OK '%s'\\n" "$ref" ||
     printf "Fail E%i: '%s'\\n" "$stat" "$ref"
   return $stat
+}
+
+str_globmatch () # ~ <String> <Glob-pattern>
+{
+  case "${1:?}" in ${2:?} ) ;; ( * ) false ;; esac
+}
+fun_def fnmatch 'str_globmatch "${2:?fnmatch: \$2 not set}" "${1:?fnmatch: \$1 not set}";'
+
+str_wordmatch () # ~ <Word> <Strings...> # Non-zero unless word appears
+{
+  : source "script-mpe.lib.sh"
+  [[ 2 -le $# ]] || return ${_E_GAE:-193}
+  case " ${*:2} " in
+    ( *" ${1:?} "*) ;; #  | *" ${1:?} " | " ${1:?} "*) ;;
+    ( * ) false ; esac
+}
+
+str_vword () # ~ <Variable> [<String>] # Transform string to word
+{
+  : source "str.lib.sh"
+  declare -n v=${1:?}
+  : "${2-$v}"
+  v="${_//[^A-Za-z0-9_]/_}"
+}
+
+# Restrict used characters to 'word' class (alpha numeric and underscore)
+str_word () # ~ <String> # Transform string to word
+{
+  : source "str.lib.sh"
+  : "${1:?}"
+  : "${_//[^A-Za-z0-9_]/_}"
+  "${upper:-false}" "$_" &&
+  echo "${_^^}" || {
+    "${lower:-false}" "$_" &&
+      echo "${_,,}" ||
+      echo "$_"
+  }
 }
 
 sh_var_incr ()

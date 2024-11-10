@@ -22,14 +22,11 @@ test -z "${BOX_INIT:-}" && BOX_INIT=1 || {
 }
 
 # run-time test since box relies on local vars and Bash seems to mess up
-box_run_sh_test()
+box_posixly_correct ()
 {
-  set | grep '^main.*()\s*$' >/dev/null && {
+  [[ ${POSIXLY_CORRECT-n} != y ]] &&
+    $INIT_LOG info "box.env" "Test ok" "$0" ||
     $INIT_LOG error "box.env" "please use sh, or bash -o 'posix'" "$0" 5
-  } || {
-    $INIT_LOG info "box.env" "Test ok" "$0"
-    return 0
-  }
 }
 
 $INIT_LOG info "box.env" "Loaded, bootstrapping env" "$0 ${_ENV-}"

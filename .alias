@@ -8,20 +8,9 @@ test  "${C_INC:?"$0[$$]: ${__}: User includes env expected (required)"}}"
 #test    "${U_S:?"$0[$$]: ${__}: User scripts env expected (required)"}}"
 
 
-# Alias box scripts and refresh compiled scripts behind alias automatically
-_shc_update_and_run ()
-{
-  test -s "$b.sh" || return 64
-  test $b.shc -nt $b.sh || {
-    make_echo=1 $b.sh > $b.shc
-    test -x $b.shc || chmod +x $b.shc
-    $LOG "note" "" "Updated box script, regenerated" "$b.shc"
-  }
-  $b.shc "$@"
-}
-
 alias htd=htd.sh
 
+# Alias box scripts
 alias ht="b=$HOME/bin/ht _shc_update_and_run"
 alias statusdir="b=$HOME/bin/statusdir _shc_update_and_run"
 test "$(type -t sd)" || alias sd=statusdir # otherwise gives trouble with compo:sd.inc
@@ -34,6 +23,10 @@ alias dckr=docker-sh.sh
 alias disk="b=$HOME/bin/disk _shc_update_and_run"
 alias ino="b=$HOME/bin/ino _shc_update_and_run"
 alias meta-sh="b=$HOME/bin/meta-sh _shc_update_and_run"
+for box_bin in "${UCONF:?}"/script/box/bin/*
+do
+  alias ${box_bin##*\/}="b=$box_bin _shc_update_and_run"
+done && unset box_bin
 
 alias topic=topic.py
 alias tm=treemap.py
@@ -58,6 +51,9 @@ alias vagrant-sh=vagrant-sh.sh
 alias yaml2yaml='jsotk dump -Oyaml --ignore-aliases --pretty'
 
 alias yaml2js="python3 -c 'import sys, yaml, json; json.dump(yaml.load(sys.stdin, yaml.Loader), sys.stdout, indent=4)'"
+
+# df local as in show file path and actual mount point
+alias dff='df --output file,target'
 
 test -z "${USER_CONF_DEBUG-}" || {
   $LOG "info" "" "Done sourcing" "~/bin/.alias"

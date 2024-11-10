@@ -41,4 +41,4 @@
 &worktree:* part worktree-local
 
 # Sync-From: U-S:
-# Id: Script.mpe/ .components.txt ex:ft=lest.txt:
+# Id: Script.mpe/ .components.txt ex:ft=lest-txt:

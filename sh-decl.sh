@@ -1,8 +1,8 @@
 
 ## Shell/decl: track shell declarations for more optimal type handling
 
-# Test, what is faster e.g. to check for array/Array type?
-# Look at speed implications for each method.
+# Benchmarking methods to check if array is defined (but may be empty)
+#
 
 # A. process opts from `declare -p` output, or
 # B. 1. store opts in one assoc arr, or
@@ -51,7 +51,7 @@
 # But so littering env with chached opts may be sub optimal.
 # Of course, nothing is said yet about large arrays.
 
-source tools/benchmark/_lib.sh
+source "${CWD:?}"/tool/benchmark/_lib.sh
 
 sh_mode strict
 
@@ -84,9 +84,9 @@ is_arr ()
   is_assoc_arr "$dopts" || is_index_arr "$dopts"
 }
 
-test_A_raw ()
+test_A_raw () # ~ <Array>
 {
-  read_decl "$1"
+  read_decl "$1" &&
   is_arr "$dopts"
 }
 
@@ -153,11 +153,13 @@ test_E_str_expansion ()
 
 echo "Run raw declare -p read (no cache)"
 time run_test $runs -- test_A_raw myTestVariable
+echo
 echo "Run from cached declare -p (assoc arr)"
 time run_test $runs -- test_B_cache_arr myTestVariable
+echo
 echo "Run from cached declare -p (plain var)"
 time run_test $runs -- test_C_cache_vars myTestVariable
-
+echo
 echo "D. Test raw call vs array key lookup (no opts caching, only keying)"
 # When caching result of built-in call only (no str I/O), array caching gives
 # negative speed optimization: ~0.2 vs ~0.3 seconds / 10000x.
@@ -165,7 +167,7 @@ echo "D. Test raw call vs array key lookup (no opts caching, only keying)"
 time run_test_q $runs -- declare -F run_test
 time run_test $runs -- test_D_caching_declare_F run_test
 time run_test_q $runs -- declare -p myTestVariable
-
+echo
 echo "E. Run raw str expansion (no cache)"
 time run_test $runs -- test_E_str_expansion myTestVariable
 
