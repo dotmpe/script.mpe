@@ -8,8 +8,10 @@ htd_src=$_
 #set -o posix
 set -euETo pipefail
 
-version=0.0.4-dev # script-mpe
+# Remove DEBUG and other log control vars from exported env
+us-env -r us:boot.screnv
 
+version=0.0.4-dev # script-mpe
 
 # Generic load/unload for subcmd
 
@@ -26,13 +28,16 @@ htd_subcmd_load ()
   main_subcmd_func "$subcmd" || true # Ignore, check for function later
   c=1 ; shift
 
-  # Default-Env upper-case: shell env constants
-  local upper=true title=
+  # Default-Env upper-case: shell env constants (see str-{,v}word)
+  local upper=true title=false
 
-  # XXX: cleanup; CWD=$PWD
-  #not_trueish "$DEBUG" || {
-  #  test "$CWD" = "$(pwd -P)" || warn "Current path seems to be aliased ($CWD)"
-  #}
+  ! "${DEBUG:-false}" || {
+    : "${PWP:=$(pwd -P)}"
+    ! "${DIAG:-false}" || {
+      stderr declare -p PWD CWD EWD PWP
+    }
+    [[ ${CWD?} = "${_}" ]] || warn "Current path seems to be aliased ($CWD)"
+  }
 
   default_env EDITOR vim || debug "Using EDITOR '$EDITOR'"
   default_env FIRSTTAB 50
@@ -253,7 +258,8 @@ htd_subcmd_load ()
 
     p ) # set (p)ackage -
         # Set package file and id, update. But don't require, see q.
-        package_lib_auto=true sh_run package-load package-init
+        add_path "${US_BIN?}"/tool/sh/part &&
+        package_lib_auto=true sh_run package-require package-init
       ;;
 
     q | Q ) # request or require package
@@ -4735,9 +4741,16 @@ htd_init()
   local scriptname_old=$scriptname; export scriptname=htd-init
   test -n "$script_util" || return 103 # NOTE: sanity
 
+  ! "${DEBUG:-false}" ||
+    ! "${DIAG:-false}" || {
+      add_path "${C_INC:?}"/tool/sh/part &&
+      uc_script_load sh-core sh-type user-script &&
+      script_debug_env CWD EWD PWP SWD
+    }
+
   set -euETo pipefail
   init_sh_libs=os\ sys\ str\ log
-  true "${CWD:="$scriptpath"}"
+  true "${SWD:="$scriptpath"}"
   true "${SUITE:="Main"}"
   true "${PACK_MAIN_ENV:="$scriptpath/.meta/package/envs/main.sh"}"
   test ! -e $PACK_MAIN_ENV || {
@@ -4755,7 +4768,7 @@ htd_init()
   INIT_LIB="os sys std log str match src main args stdio vc std-ht shell"\
 " bash-uc ansi-uc"\
 " date str-htd logger-theme sys-htd vc-htd statusdir os-htd htd ctx-std" \
-. ${CWD:="$scriptpath"}/tool/main/init.sh ||  {
+. ${SWD:="$scriptpath"}/tool/main/init.sh ||  {
     $htd_log error htd-init "E$?" "tool/main/init" $? || return
   }
 

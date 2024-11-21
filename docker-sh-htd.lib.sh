@@ -77,7 +77,7 @@ docker_sh_c_create() # [Container] [Docker-Image]
 
   # FIXME: normal treebox superuser setup on Darwin has owner id probs?
   #echo "%supergroup  ALL=NOPASSWD:ALL" >.etc-sudoers.d-treebox-supergroup
-  #  -v $PPWD/.etc-sudoers.d-treebox:/etc/sudoers.d/treebox-supergroup \
+  #  -v $PWP/.etc-sudoers.d-treebox:/etc/sudoers.d/treebox-supergroup \
 
       # -v $HOME/.docker/config.json:$home/.docker/config.json:ro \
 

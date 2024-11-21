@@ -140,17 +140,17 @@ mkmine() { sudo chown -R ${USER} ${1:-.}; }
 
 pwd_p()
 {
-  test -n "${PWD_P-}"
+  test -n "${PWP-}"
 }
 
 pop_pwd()
 {
-  test -n "${PWD_P-}" || return 0
-  PWD_P="${PWD_P%:*}"
-  local pwd="${PWD_P//*:}"
-  #local pwd="$(echo "$PWD_P" | cut -d':' -f1)"
-  #PWD_P="$(echo "$PWD_P" | cut -d':' -f2- --output-delimiter=':')"
-  test -n "$PWD_P" || unset PWD_P
+  test -n "${PWP-}" || return 0
+  PWP="${PWP%:*}"
+  local pwd="${PWP//*:}"
+  #local pwd="$(echo "$PWP" | cut -d':' -f1)"
+  #PWP="$(echo "$PWP" | cut -d':' -f2- --output-delimiter=':')"
+  test -n "$PWP" || unset PWP
   cd "$pwd"
 }
 
@@ -217,13 +217,13 @@ prompt_autocomplete () # ~ <Prompt> <Var> <ac>
 push_pwd() # [Dir]
 {
   test -z "${1-}" || { cd $1 || return; }
-  case "$PWD_P" in *":$PWD" ) return ;; esac
-  PWD_P=${PWD_P}:$PWD
+  case "$PWP" in *":$PWD" ) return ;; esac
+  PWP=${PWP}:$PWD
 }
 
 pwd_init()
 {
-  pwd_p || PWD_P=$PWD
+  pwd_p || PWP=$PWD
 }
 
 # require vars to be initialized, regardless of value

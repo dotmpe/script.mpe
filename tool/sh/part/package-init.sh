@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# request load, or require
-package_req ()
-{
-  package_require=true package_require
-}
+### package-init: helper routines for package.lib
+
+# package-load() is a wrapper to start package.lib, package-require() provides
+# some verbososity, and also supports the package-require:bool setting like
+# package.lib:-set-local does.
 
 package_require ()
 {
@@ -19,8 +19,8 @@ package_require ()
   }
 }
 
-# setup env XXX: may be deprecated by now
-package_load ()
+# Setup package.lib, and initialize for current directory
+package_load () # ~ [<Package-Dir>] [<Package-Id>]
 {
   test ${package_lib_init:-1} -eq 0 || {
     test ${package_lib_load:-1} -eq 0 || {
@@ -28,7 +28,7 @@ package_load ()
     }
     package_lib_auto=true lib_init package || return
   }
-  package_init
+  package_init "$@"
 }
 
 #

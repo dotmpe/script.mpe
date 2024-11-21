@@ -276,6 +276,12 @@ str_word () # ~ <String> # Transform string to word
   }
 }
 
+sh_var ()
+{
+  : source "script-mpe.lib.sh"
+  declare -p "${1:?}" > /dev/null 2>&1
+}
+
 sh_var_incr ()
 {
   : source "script-mpe.lib.sh"

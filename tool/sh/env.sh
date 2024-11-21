@@ -5,7 +5,7 @@
 test -z "${sh_env_:-}" && sh_env_=1 || return 98 # Recursion
 
 test ${DEBUG:-0} -ne 0 || DEBUG=
-: "${CWD:="$PWD"}"
+: "${CWD?us-bin:tool/sh/env command working dir expected}"
 : "${sh_tools:="$CWD/tool/sh"}"
 
 test "${env_strict_-}" = "0" || {

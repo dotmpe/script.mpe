@@ -480,8 +480,8 @@ package_sh () # Key
     prefix="$map"
     sub=
   }
-  test -n "${PACK_SH-}" -a -e "${PACK_SH-}" || {
-    error "package-sh '${PACK_SH:-(unset)}'" 1 || return
+  [[ ${PACK_SH:+set} && -s "${PACK_SH-}" ]] || {
+    error "package-sh Missing or empty '${PACK_SH:-(unset)}'" 1 || return
   }
   # Use util from str.lib to get the keys from the properties file
   property "$PACK_SH" "$prefix" "$sub" "$@"

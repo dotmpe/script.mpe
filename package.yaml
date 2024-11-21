@@ -1,6 +1,4 @@
-- environment:
-  - dev
-  tool:
+- tool:
     redo:
       part:
         base:
@@ -30,13 +28,13 @@
   build: redo "\$@"
   env:
   # XXX: what level wrt to the project root is this stored?
-  - 'true "\${CWD:="\$(dirname \$(dirname \$(dirname \$0)))"}"'
+  #- 'true "\${CWD:="\$(dirname \$(dirname \$(dirname \$0)))"}"'
   - '. \$HOME/.conf/etc/profile.d/_local.sh'
   #- 'test -e \$CWD/.meta/attributes.sh -a \$CWD/.meta/attributes.sh -nt \$CWD/.attributes
   #  || { compo eval "cd \$CWD && c-groups ht && ht-attributes"; }'
   #- '. \$CWD/.meta/attributes.sh'
   - '. \$CWD/.meta/package/main.sh'
-  - 'CWD=\$UCONF . "\${_ENV:="\$UCONF/tool/\${ENV_GROUP:="sh"}/env.sh"}" || return'
+  #- 'CWD=\$UCONF . "\${_ENV:="\$UCONF/tool/\${ENV_GROUP:="sh"}/env.sh"}" || return'
   - 'test -z "${SCRIPTPATH:-}" || export PATH=$SCRIPTPATH:$PATH'
   main: script-2008b-mpe
   type: application/vnd.org.wtwta.project

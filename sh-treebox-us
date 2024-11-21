@@ -13,12 +13,12 @@ set -o errexit
 set -o pipefail
 set -o nounset
 scriptname="sh-treebox-us"
-PPWD="`pwd -P`"
+PWP="`pwd -P`"
 
 run()
 {
   #echo "%supergroup  ALL=NOPASSWD:ALL" >.etc-sudoers.d-treebox-supergroup
-  #  -v $PPWD/.etc-sudoers.d-treebox:/etc/sudoers.d/treebox-supergroup \
+  #  -v $PWP/.etc-sudoers.d-treebox:/etc/sudoers.d/treebox-supergroup \
   dckr_u_s=/home/treebox/build/dotmpe/user-scripts
   dckr_u_s=/src/github.com/dotmpe/user-scripts
 
@@ -26,7 +26,7 @@ run()
     -ti --rm \
     -v ~/.ssh:/home/treebox/.ssh:ro \
     -v ~/bin:/home/treebox/bin \
-    -v $PPWD:$dckr_u_s \
+    -v $PWP:$dckr_u_s \
     -v $(realpath /etc/localtime):/etc/localtime \
     -v $(realpath /srv/scm-git-24-2-notus-brix/):/srv/scm-git-24-2-notus-brix/ \
     -v /var/run/docker.sock:/var/run/docker.sock \

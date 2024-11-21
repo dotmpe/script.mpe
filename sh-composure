@@ -2,7 +2,7 @@
 set -euo pipefail
 
 CWD="$PWD"
-PPWD="`pwd -P`"
+PWP="`pwd -P`"
 
 unset  U_S  LOG  INIT_LOG  SCRIPTPATH
 
@@ -19,7 +19,7 @@ LOG=/etc/profile.d/uc-profile.sh
 #U_S=/src/github.com/dotmpe/user-scripts
 #: "${U_S:="$HOME/build/dotmpe/user-scripts"}"
 : "${U_S:="$HOME/project/user-scripts"}"
-#: "${LOG:="$PPWD/tools/sh/log.sh"}"
+#: "${LOG:="$PWP/tools/sh/log.sh"}"
 : "${LOG:="$U_S/tools/sh/log.sh"}"
 #: "${INIT_LOG:="$LOG"}"
 
@@ -43,7 +43,7 @@ echo $SCRIPTPATH | tr ':' '\n'
 
 exit $?
 
-. $PPWD/tools/sh/init.sh
+. $PWP/tools/sh/init.sh
 lib_load composure str-htd std src function functions ck shell git volume oil docker-sh
 lib_init
 

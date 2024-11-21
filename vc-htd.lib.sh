@@ -327,7 +327,7 @@ vc_unversioned_hg()
 # List untracked paths (excluding ignored files)
 vc_unversioned()
 {
-  pwd_p && push_pwd || pwd_init # Start tracking PWD on PWD_P stack.
+  pwd_p && push_pwd || pwd_init # Start tracking PWD on PWP stack.
 
   test -n "${scm-}" || vc_getscm # Get scm-id/scm-dir
 
@@ -376,7 +376,7 @@ vc_untracked_hg()
 # List any untracked paths (including ignored files)
 vc_untracked()
 {
-  pwd_p && push_pwd || pwd_init # Start tracking PWD on PWD_P stack.
+  pwd_p && push_pwd || pwd_init # Start tracking PWD on PWP stack.
 
   test -n "${scm-}" || vc_getscm # Get scm-id/scm-dir
 
@@ -425,7 +425,7 @@ vc_tracked_hg()
 # List file tracked in version
 vc_tracked()
 {
-  pwd_p && push_pwd || pwd_init # Start tracking PWD on PWD_P stack.
+  pwd_p && push_pwd || pwd_init # Start tracking PWD on PWP stack.
 
   test -n "${scm-}" || vc_getscm # Get scm-id/scm-dir
 

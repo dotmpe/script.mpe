@@ -11,7 +11,7 @@ test ! -e $HOME/.local/etc/profile.d/_local.sh || . $HOME/.local/etc/profile.d/_
 : "${CS:="dark"}"
 export CS
 : "${CWD:="$PWD"}"
-: "${LOG:="$CWD/tools/sh/log.sh"}"
+: "${LOG:="$CWD/tool/sh/log.sh"}"
 
 sh_include env-strict debug-exit \
   env-0-1-lib-sys env-gnu
@@ -29,7 +29,7 @@ ci_stages="${ci_stages:-} ci_env"
 sh_env_ts=$($gdate +"%s.%N")
 ci_stages="$ci_stages sh_env"
 
-. "${CWD}/tools/sh/env.sh"
+. "${CWD}/tool/sh/env.sh"
 
 sh_env_end_ts=$($gdate +"%s.%N")
 
@@ -38,7 +38,7 @@ test -n "${ci_util_:-}" || {
   . "$U_S/tools/ci/util.sh"
 }
 
-: ${INIT_LOG:="$CWD/tools/sh/log.sh"}
+: ${INIT_LOG:="$CWD/tool/sh/log.sh"}
 
 test -n "${IS_BASH:-}" || $INIT_LOG error "Not OK" "Need to know shell dist" "" 1
 
