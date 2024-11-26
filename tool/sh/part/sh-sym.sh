@@ -31,10 +31,16 @@ sh_sym_ref () # ~ <Names...>
 {
   : source "sh-sym.sh"
   local __{cb{,i},sym,tp{,d}}
+  # TODO: allow to request other formats from detectors
+  : "${sh_sym_ref_fmt:=bash}"
+  # Iterate given literal symbols
   for __sym in "${@:?"Expected one or more symbols"}"
   do
+    # Attempt to resolve by trying 'detector' command and then handler
     for __cbi in ${!sh_sym_det[*]}
     do
+      ! "${DEBUG:-false}" ||
+        stderr echo "Found $__cbi symbol '$__sym'"
       ! __tpd=$(std_noerr ${sh_sym_det[$__cbi]} "$__sym") || {
         #stderr echo "found, '$__cbi' has symbol '$__sym' declared as '$__tpd'"
         sh_sym_ref__${__cbi//[^A-Za-z0-9_]/_}
@@ -46,7 +52,7 @@ sh_sym_ref () # ~ <Names...>
 
 sh_sym_refpager ()
 {
-  IF_LANG=bash ${REFPAGER:-${PAGER:?}}
+  IF_LANG=${sh_sym_ref_fmt?} ${REFPAGER:-${PAGER:?}}
 }
 
 sh_sym_ref__shell_lang_ac ()
@@ -72,14 +78,19 @@ sh_sym_ref__shell_lang_name ()
       : "${_## }"
       test "$als" = "$_" && {
         echo "alias $__sym=$als"
+        ! "${DEBUG:-false}" ||
+          stderr echo "Recursing for symbol '$als' from alias '$__sym'"
         sh_sym_ref "$als" || return
       } || {
         echo "alias $__sym='${BASH_ALIASES[$__sym]}'"
-        echo "# alias \`$__sym' expands to script:"
-        echo "$als" | sed 's/^/   /'
+        [[ ${BASH_ALIASES[$__sym]} = "$als" ]] || {
+          ! "${VERBOSE:-false}" ||
+            echo "# alias \`$__sym' expands to script:"
+          echo "$als" | sed 's/^/   /'
+        }
       }
       ! if_ok "$(which -- "$__sym" 2>/dev/null)" ||
-        echo "# alias shadows \`$__sym' exec $_"
+        echo "# ! alias shadows \`$__sym' exec $_"
     ;;
   ( keyword | builtin )
       if_ok "$(help "$__sym")" && echo -e "Usage: $_\n" || r=$?
@@ -107,8 +118,8 @@ sh_sym_ref__shell_lang_name ()
       if_ok "$(declare -F "$__sym")" &&
       read -r _ srcln srcfn <<< "$_" &&
       {
-        echo "# Source <$srcfn> line $srcln"
         declare -f "$__sym"
+        echo "# source <$srcfn> line $srcln"
         #ac_spec "$__sym" || true
         sh_sym_fexp "$__sym"
       }
@@ -147,6 +158,12 @@ sh_sym_ref__sys_os_package ()
 }
 
 # Print export line for function, if found exported for current env
+# XXX: there is no flag or attribute spec retrievable for functions? Using
+# `env|grep` here as that seems like the only option, cannot check for variable
+# if variable is special name with %-char. Ie. no syntax such as:
+# ${BASH_FUNC_<fun>+set}
+# ${BASH_FUNC_<fun>%+set}
+# ${BASH_FUNC_<fun>%%+set}
 sh_sym_fexp () # ~ <Name>
 {
   : source "sh-sym.sh"
