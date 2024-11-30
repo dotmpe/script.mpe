@@ -39,9 +39,9 @@ sh_sym_ref () # ~ <Names...>
     # Attempt to resolve by trying 'detector' command and then handler
     for __cbi in ${!sh_sym_det[*]}
     do
-      ! "${DEBUG:-false}" ||
-        stderr echo "Found $__cbi symbol '$__sym'"
       ! __tpd=$(std_noerr ${sh_sym_det[$__cbi]} "$__sym") || {
+        ! "${DEBUG:-false}" ||
+          stderr echo "Found $__cbi symbol '$__sym'"
         #stderr echo "found, '$__cbi' has symbol '$__sym' declared as '$__tpd'"
         sh_sym_ref__${__cbi//[^A-Za-z0-9_]/_}
       }
@@ -62,6 +62,7 @@ sh_sym_ref__shell_lang_ac ()
 
 sh_sym_ref__shell_lang_cmd ()
 {
+  return # XXX:
   echo "${__tpd%%: *}"
   echo "# ${__tpd#*: }"
   #if_ok "$(ac_spec "$__sym" | sed 's/^/  /')" &&
@@ -72,21 +73,31 @@ sh_sym_ref__shell_lang_name ()
 {
   case "$__tpd" in
   ( alias )
+      # Completely expand expression and try to detect pipeline and then recurse
+      # sh-sym-ref on the actual command/function symbol as well.
       if_ok "$(sh_als_exp "$__sym")" || return
-      als="$_"
-      : "${als%% *}"
+      als_exp="$_"
+      : "${als_exp%% *}"
       : "${_## }"
-      test "$als" = "$_" && {
-        echo "alias $__sym=$als"
+      test "$als_exp" = "$_" && {
+        # Single aliased word, no further expansions
+        echo "alias $__sym=$als_exp"
         ! "${DEBUG:-false}" ||
-          stderr echo "Recursing for symbol '$als' from alias '$__sym'"
-        sh_sym_ref "$als" || return
+          stderr echo "Recursing for symbol '$als_exp' from alias '$__sym'"
+        # Recurse for aliased word
+        sh_sym_ref "$als_exp" || return
       } || {
+        # TODO: Complex expression, unless enclosed in {} check for pipeline, and then
+        # try and extract exec command or function name to recurse sh-sym-ref
+        # and include info/man output
         echo "alias $__sym='${BASH_ALIASES[$__sym]}'"
-        [[ ${BASH_ALIASES[$__sym]} = "$als" ]] || {
+        [[ ${BASH_ALIASES[$__sym]} = "$als_exp" ]] || {
           ! "${VERBOSE:-false}" ||
             echo "# alias \`$__sym' expands to script:"
-          echo "$als" | sed 's/^/   /'
+          echo "$als_exp" | sed 's/^/   /'
+        }
+        [[ $als_exp =~ ^{\ .*\;\ }$ ]] || {
+          echo "# ! TODO:check for pipeline or bool expr? \`$__sym' \`$als_exp'"
         }
       }
       ! if_ok "$(which -- "$__sym" 2>/dev/null)" ||
@@ -102,16 +113,18 @@ sh_sym_ref__shell_lang_name ()
       return ${r-}
     ;;
   ( file )
-        [[ -x "$file" ]] && {
-          "$__sym" --help 2>&1 || r=$?
-        }
-        #test "$__sym" = "$(command -v $__sym)" ||
-        #  echo -e "\n \`$__sym' is exec $_"
-        #! if_ok "$(ac_spec "${__sym##*/}" | sed 's/^/  /')" ||
-        #  echo -e "\nCompletions:\n$_"
-        #! if_ok "$(sh_vspec "$__sym")" ||
-        #  echo -e "\nVariable:\n  $_"
-        return ${r-}
+      [[ -x "$__sym" ]] && {
+        echo -e "$__sym:help ()\n{\n  cat <<EOM"
+        "$__sym" --help 2>&1 || r=$?
+        echo -e "EOM\n}"
+      }
+      test "$__sym" = "$(command -v $__sym)" ||
+        echo -e "\n \`$__sym' is exec $_"
+
+      ac_spec "${__sym##*/}"
+      sh_vspec "$__sym"
+
+      return ${r-}
     ;;
   ( function )
       local srcln srcfn

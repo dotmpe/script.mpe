@@ -52,8 +52,8 @@ alias yaml2yaml='jsotk dump -Oyaml --ignore-aliases --pretty'
 
 alias yaml2js="python3 -c 'import sys, yaml, json; json.dump(yaml.load(sys.stdin, yaml.Loader), sys.stdout, indent=4)'"
 
-# df local as in show file path and actual mount point
-alias dff='df --output file,target'
+# df with all fields
+alias dff='df --output'
 
 test -z "${USER_CONF_DEBUG-}" || {
   $LOG "info" "" "Done sourcing" "~/bin/.alias"

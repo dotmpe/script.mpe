@@ -252,11 +252,12 @@ script_debug_env () # ~ [<Names...>]
   #stderr echo Bases rev: $(user_script_bases | tac)
   [[ $# -gt 0 ]] || return ${_E_MA:?}
   : "$(for a; do sh_var "$a" && echo "$a"; done)"
-  test -z "$_" || script_debug_vars $_
+  test -z "$_" || stderr script_debug_vars $_
   : "$(for a; do sh_arr "$a" && echo "$a"; done)"
-  test -z "$_" || script_debug_arrs $_
+  test -z "$_" || stderr script_debug_arrs $_
+  local us_debug_fullfun=false
   : "$(for a; do sh_fun "$a" && echo "$a"; done)"
-  test -z "$_" || us_debug_fullfun=false script_debug_funs $_
+  test -z "$_" || stderr script_debug_funs $_
 }
 
 script_debug_frame () # ~ # Print stacktrace using FUNCNAME/caller

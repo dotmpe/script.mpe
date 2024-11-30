@@ -1,4 +1,12 @@
-- tool:
+# git-versioning main: Script.mpe
+- main: script-2008b-mpe
+  id: script-2008b-mpe
+  version: 0.0.4-dev # Script.mpe
+  label: Script.mpe
+  slug-id: script-mpe
+  type: application/vnd.org.wtwta.project
+  vendor: dotmpe
+  tool:
     redo:
       part:
         base:
@@ -14,9 +22,6 @@
     - BOREAS_SKIP=1
     - DANDY_SKIP=1
     - VS1_SKIP=1
-  version: 0.0.4-dev # Script.mpe
-  id: script-2008b-mpe
-  slug-id: script-mpe
   log: DevLog.rst
   specs:
     units: test/py/\$id.py test/py/mod_\$vid.py test/\$id-lib-spec.bats test/\$id-spec.bats
@@ -36,9 +41,6 @@
   - '. \$CWD/.meta/package/main.sh'
   #- 'CWD=\$UCONF . "\${_ENV:="\$UCONF/tool/\${ENV_GROUP:="sh"}/env.sh"}" || return'
   - 'test -z "${SCRIPTPATH:-}" || export PATH=$SCRIPTPATH:$PATH'
-  main: script-2008b-mpe
-  type: application/vnd.org.wtwta.project
-  vendor: dotmpe
   contexts:
     default: '@Dev @Script +\$package_id <\$package_dir> @Project'
   lists:

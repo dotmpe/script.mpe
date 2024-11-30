@@ -1,3 +1,6 @@
+! "${VERBOSE:-false}" || ! "${DEBUG:-false}" ||
+  $LOG info :env "Env (dir) loading..."
+
 # XXX: .env to sh?
 
 . ~/.local/etc/profile.d/_local.sh
