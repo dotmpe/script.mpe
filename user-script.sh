@@ -127,6 +127,13 @@ script_entry () # [script{name,_baseext},base] ~ <Scriptname> <Action-arg...>
 
 script_envinit () # ~ <Bases...>
 {
+  # TODO: transpile and source us-env functions
+  add_path "${U_S?}/tool/us/part" &&
+  uc_script_load "-us-env.base" &&
+  # XXX: start us-env
+  us_env_declare &&
+  us_env_load "${1:?}"
+
   std_silent declare -p ENVD_FUN || declare -gA ENVD_FUN=()
   std_silent declare -p us_node || declare -gA us_node=()
   std_silent declare -p us_node_base || declare -gA us_node_base=()
@@ -765,9 +772,10 @@ user_script_graph_init () # ~ <Base ...> # Traverse (env) nodes, and record path
 # and roots in script-node{,-base} resp.
 {
   local base{,id,s}
+  stderr echo "user-script:graph-init base($#): $*"
   while [[ $# -gt 0 ]]
   do
-    stderr echo graph-init $1 ${us_node_base["${1:?}"]+set} ${us_node_base["${1:?}"]-unset}
+    stderr echo graph-init $1 ${us_node_base["${1:?}"]+base:set} ${us_node_base["${1:?}"]-base:unset}
 
     [[ ${us_node_base["${1:?}"]+set} ]] && {
       set -- ${us_node_base["$1"]} "${@:2}"
@@ -951,12 +959,13 @@ user_script_load () # (y*) ~ <Actions...>
 
     ( baseenv ) # Entire pre-init for script, ie. to use defarg
         [[ ${script_base-} ]] || {
+
           : "${SCRIPTNAME:?}"
           : "${_//[^A-Za-z0-9_-]/-}"
           script_base=$_
 
           local -n group="${script_base//-/_}__grp"
-          #local -n group="$(str_word "${script_base:?}")__grp"
+          # XXX: local -n group="$(str_word "${script_base:?}")__grp"
           : "${group:=user-script}"
         }
         script_envinit ${script_base//,/ }

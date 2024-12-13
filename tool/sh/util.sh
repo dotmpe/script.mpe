@@ -10,7 +10,7 @@ test -z "${sh_util_:-}" && sh_util_=1 || return 198 # Recursion
 
 # TODO: move some of below to CI util.sh
 
-. $HOME/bin/tools/sh/init-include.sh # Initialize sh_include
+. $HOME/bin/tool/sh/init-include.sh # Initialize sh_include
 
 sh_include \
   str-bool str-id read exec \

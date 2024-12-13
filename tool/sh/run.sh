@@ -5,7 +5,7 @@
 # XXX: cleanup, cons. run.sh +htdocs_mpe
 
 scriptname=ci:run
-. $scriptpath/tools/sh/run.inc.sh "$@"
+. $scriptpath/tool/sh/run.inc.sh "$@"
 lib_load build
 
 build_matrix | while read params

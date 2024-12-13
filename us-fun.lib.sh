@@ -1,4 +1,6 @@
 
+# FIXME: move to +user-scripts:tool/us/part
+
 us_fun_lib__load ()
 {
   : "${us_fun_funset:=$(echo \
