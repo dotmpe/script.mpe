@@ -33,7 +33,7 @@ check_environment ()
         test "$setting" = "$varn=$varc" || {
           ${list_vars:-false} && echo "$varn"
           ${list_env:-false} && echo "$varn=\"${setting/*=}\""
-          echo "Tmux session changed: '$setting', local was: '$varc'" >&2
+          echo "tmux-helper:check: Tmux session changed: '$setting', local was: '$varc'" >&2
         }
     done
 }
