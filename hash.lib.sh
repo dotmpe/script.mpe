@@ -1,17 +1,34 @@
 #!/bin/sh
 
+
 hash_lib__load ()
 {
   lib_require ck
 }
 
 
+hash__cklib () # ~ <Algo> [<Check> ...]
+{
+  ck_${1:?} - "${@:3}"
+}
+
+hash__pybg ()
+{
+  false
+}
+_
+hash_std () # ~ <Be> <Algo> [<Check> ...]
+{
+  hash__${1:?} "${@:3}"
+}
+
 # FIXME: crc32: $(cksum.py -a rhash-crc32 "$1" | cut -d ' ' -f 1,2)
 
 # Wrapper for generating hash/cksum from string
 hash_str () # ~ <Algo> <String> [<Check>]
 {
-  ck_${1:?} - "${@:3}" <<< "${2:?"$(sys_exc hash-str "String expeced")"}"
+  <<< "${2:?"$(sys_exc hash-str "String expeced")"}" hash_std \
+    "${hash_be:-cklib}" "$1" "${@:3}"
 }
 
 # Output hash or checksum (in ASCII form) from input, and format. Default

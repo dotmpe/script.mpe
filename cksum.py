@@ -7,7 +7,7 @@ are split at the double space.
 Three algorithms for CRC32 are tested in test/ck-spec.bats: the common
 UNIX cksum, and ZIP and Ethernet variants. A working but slow pure python
 UNIX cksum 'ckpy' is provided. Other algorithms are taken from hashlib, or
-wrapped are invocations of rhash or php.
+wrapped invocations of rhash or php. See script_mpe.res.ck.
 """
 from __future__ import print_function
 __description__ = "cksum.py - "

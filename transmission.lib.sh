@@ -87,9 +87,9 @@ transmission_active () # ~
 transmission_fix_item_cols () # (std) ~ # Remove whitespace from column values
 {
   sed '
-        s/\([0-9]\) \([kMGT]B\) /\1\2 /
-        s/\([0-9]\) \(sec\|min\|hrs\|days\) /\1\2 /
-        s/ Up & Down / Up-Down /
+        s/\([0-9]\) \([kMGT]B\) /\1\2  /
+        s/\([0-9]\) \(sec\|min\|hrs\|days\) /\1\2  /
+        s/ Up & Down / Up-Down   /
     '
 }
 
@@ -775,7 +775,8 @@ transmission_listarg ()
 }
 
 # A simple and compact basis to write handlers to parse transmission-remote -l
-# output. This only handles arguments to the reader and runner functions. See
+# output (but in a subshell).
+# This only handles arguments to the reader and runner functions. See
 # tranmission-listarg, and the base runner/parser routine is in
 # transmission-list-runner. Handler name is a full function name, default is
 # transmission-item-check. See also other examples 'transmission_item_*' here.
@@ -973,19 +974,18 @@ transmission_torrent_info () # ~ <Id-Spec> <Key...> # Parse info output and set 
   if_ok "${ti:="$(transmission_client_remote -t "${1:?}" -i)"}" || return
   shift
   ti_sh="$(
-    while test $# -gt 0
+    for fieldspec
     do
-      fnmatch "*:*" "$1" && {
-        field=${1/*:}
-        var=${1/:*}
+      fnmatch "*:*" "$fieldspec" && {
+        field=${fieldspec/*:}
+        var=${fieldspec/:*}
       } || {
-        field=$1 var=${1// /_}
+        field=$fieldspec var=${fieldspec// /_}
       }
       # NOTE: Availability field is duplicated for missing-metadata downloads
       echo "${ti//\'/\\\'}" | grep -m 1 "^ *$field:" | sed '
           s/^ *[^:]*: \(.*\)$/'"$var"'='"'"'\1'"'"'/
         '
-      shift
     done )"
   eval "$ti_sh"
 }

@@ -72,7 +72,7 @@ def memcrc(b):
         s = UNSIGNED((s << 8)) ^ crctab[tabidx]
 
     while n:
-        c = n & 0377
+        c = n & 0o377
         n = n >> 8
         s = UNSIGNED(s << 8) ^ crctab[(s >> 24) ^ c]
     return UNSIGNED(~s)

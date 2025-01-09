@@ -212,7 +212,8 @@ script_debug_args () # ~ <Args> # Pretty-print arguments
   done
 }
 
-# Turn declaration into pretty print using sed
+# Turn declaration into pretty print using sed. For a better function to
+# produce readable data, see arr-dump in sys.lib
 script_debug_arr () # ~ <Array-var> # Pretty-print array
 {
   test 1 -eq $# || return ${_E_MA:?}
@@ -1425,11 +1426,11 @@ user_script_stdstat_env ()
   #: "${_E_cont:=100}"
   : "${_E_recursion:=111}" # unwanted recursion detected
 
-  #: "${_E_bug:=121}" # BUG: known issue
-  #: "${_E_fixme:=122}" # FIXME/task: cleanup required or incomplete specs/code/...
-  : "${_E_xxx:=123}" # XXX/deprecated: attention/removal required
-  : "${_E_NF:=124}" # no-file/no-such-file(set): file missing or nullglob
-  : "${_E_missing:=125}" # TODO: impl. missing
+  : "${_E_ifenv:=121}" # ifenv/BUG/issue: faulty behaviour
+  : "${_E_doenv:=122}" # doenv/FIXME/task: integration/cleanup required or incomplete specs/code/...
+  : "${_E_noenv:=123}" # noenv/XXX/deprecated: pending caution, restart or other action required
+  : "${_E_NF:=124}" # no-file/no-such-file(set): missing file or nullglob encountered
+  : "${_E_missing:=125}" # TODO: impl. missing (not OK. see also 12{1,2,3} for more specific faults)
   : "${_E_not_exec:=126}" # NEXEC not-an-executable
   : "${_E_not_found:=127}" # NSFC no-such-file-or-command
   # 128+ is mapped for signals (see trap -l)

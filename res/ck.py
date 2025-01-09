@@ -43,8 +43,9 @@ class crc32(object):
 hashlib.crc32 = crc32
 
 # Python > 2.7: hashlib.algorithms += ('crc32',)
-hashlib.algorithms += ('crc32', )
-# XXX: Python > 3.2: hashlib.algorithms_available.add('crc32')
+#hashlib.algorithms += ('crc32', )
+# XXX: Python > 3.2:
+hashlib.algorithms_available.add('crc32')
 
 
 def rhash(path, name):

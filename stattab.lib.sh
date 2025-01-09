@@ -63,15 +63,15 @@ stattab__init ()
 # and then value from line as well.
 stattab_data_dirln () # (stbdr) ~
 {
-  test -z "$rawline"  && return
+  test -z "$_rawline"  && return
 
-  test "${rawline:0:1}" != "#" || {
+  test "${_rawline:0:1}" != "#" || {
 
-    test "${rawline:1:1}" = ":" && {
+    test "${_rawline:1:1}" = ":" && {
       local dirkey value
-      : "${rawline:2}"
+      : "${_rawline:2}"
       dirkey=${_%: *}
-      value=${rawline:$(( 4 + ${#dirkey} ))}
+      value=${_rawline:$(( 4 + ${#dirkey} ))}
       : "${dirkey%:}"
       : "${_//[^A-Za-z0-9_]/_}"
       declare -g $_="$value"
@@ -79,41 +79,43 @@ stattab_data_dirln () # (stbdr) ~
     }
   }
 
-  str_globmatch "${rawline:0:1}" "[# $STTAB_FS]" ||
+  str_globmatch "${_rawline:0:1}" "[# $STTAB_FS]" ||
     return ${_E_continue:-195}
 }
 
 stattab_data_line () # (:stbdr) ~ <Data-handler> [<Args...>]
 {
-  stattab_data_line_split "$rawline" || return
+  stattab_data_line_split "$_rawline" || return
 
   # Process filter vars
-  test -n "${stb_dl_stat-}" && {
-    str_wordmatch "${_-}" "$stat" || return 0
-  } || {
-    test -z "${stb_dl_fstat-}" || {
-      str_wordmatch "${_-}" "$stat" && return 0
-    }
-  }
-  test -n "${stb_dl_data-}" && {
-    str_wordmatch "${_-}" "$data" || return 0
-  } || {
-    test -z "${stb_dl_fdata-}" || {
-      str_wordmatch "${_-}" "$data" && return 0
-    }
-  }
-  test -n "${stb_dl_rest-}" && {
-    str_wordmatch "${_-}" "$rest" || return 0
-  } || {
-    test -z "${stb_dl_frest-}" || {
-      str_wordmatch "${_-}" "$rest" && return 0
-    }
-  }
+  #test -n "${stb_dl_stat-}" && {
+  #  str_wordmatch "${_-}" "$_stat" || return 0
+  #} || {
+  #  test -z "${stb_dl_fstat-}" || {
+  #    str_wordmatch "${_-}" "$_stat" && return 0
+  #  }
+  #}
+  #test -n "${stb_dl_data-}" && {
+  #  str_wordmatch "${_-}" "$_data" || return 0
+  #} || {
+  #  test -z "${stb_dl_fdata-}" || {
+  #    str_wordmatch "${_-}" "$_data" && return 0
+  #  }
+  #}
+  #test -n "${stb_dl_rest-}" && {
+  #  str_wordmatch "${_-}" "$_rest" || return 0
+  #} || {
+  #  test -z "${stb_dl_frest-}" || {
+  #    str_wordmatch "${_-}" "$_rest" && return 0
+  #  }
+  #}
 
-  ! "$append" || set -- "$data"
+  ! "$_append" || set -- "$_data"
 
-  $LOG debug :stb:data-line "Running..." "cmd=$cmd:$#:$*"
-  stb_stat="$stat" stb_data="$data" stb_rest="$rest" "$cmd" "$@"
+  ! "${VERBOSE:-false}" ||
+  ! "${DEBUG:-false}" ||
+    $LOG debug :stb:data-line "Running..." "cmd=$_cmd:$#:$*"
+  stb_stat="$_stat" stb_data="$_data" stb_rest="$_rest" "$_cmd" "$@"
 }
 
 stattab_data_line_split () # (:data,stat,rest) ~ <Line>
@@ -123,20 +125,20 @@ stattab_data_line_split () # (:data,stat,rest) ~ <Line>
   # Strip stat characters prefixed to value
   str_globmatch "$1" "[$prefc$sepc]*" && {
     data_rest=$(str_globstripcl "$1" "[$prefc$sepc]") || return
-    stat=${1:0:$(( ${#1} - ${#data_rest} ))}
+    _stat=${1:0:$(( ${#1} - ${#data_rest} ))}
   } || {
     data_rest=$1
-    stat=
+    _stat=
   }
 
   # Remove rest of fields
   #shellcheck disable=SC2295 # Expansions inside ${..}
   str_globmatch "$data_rest" "*:$sepc*" "*:"  && {
-    data=${data_rest%%:$sepc*}
-    rest=${data_rest:$(( 1 + ${#sepc} + ${#data} ))}
+    _data=${data_rest%%:$sepc*}
+    _rest=${data_rest:$(( 1 + ${#sepc} + ${#data} ))}
   } || {
-    data=${data_rest%%$sepc*}
-    rest=${data_rest:$(( ${#sepc} + ${#data} ))}
+    _data=${data_rest%%$sepc*}
+    _rest=${data_rest:$(( ${#sepc} + ${#_data} ))}
   }
 }
 
@@ -150,14 +152,15 @@ stattab_data_line_split () # (:data,stat,rest) ~ <Line>
 # before.
 stattab_data_list () # (stbdr:) ~ <Handler <args...>>
 {
-  local cmd="${1:?Command name expected}" append=false
+  local _cmd="${1:?Command name expected}" _append=false
   shift || return
-  test 0 -lt $# || append=true
-  local cur_IFS=$IFS IFS=$'\n' rawline stat data{,_rest} rest ln=0
-  while read -r rawline
+  test 0 -lt $# || _append=true
+  local cur_IFS=$IFS _{rawline,stat,data,rest} _ln=0
+  for (( _ln=0; 1; _ln++ ))
   do
+    IFS=$'\n'
+    read -r _rawline || break
     IFS="$cur_IFS"
-    ln=$(( ln + 1 ))
 
     "${stb_dld:-stattab_data_dirln}" && continue || {
       test "${_E_continue:-195}" = "$?" || return $_
@@ -166,7 +169,7 @@ stattab_data_list () # (stbdr:) ~ <Handler <args...>>
     "${stb_dli:-stattab_data_line}" "$@"
   done ||
     return
-  $LOG notice : "Reading done" "lines:$ln"
+  $LOG notice : "Reading done" "lines:$_ln"
 }
 
 stattab_data_outline () # ~ <Handler <args...>>

@@ -54,7 +54,7 @@ socat, instead of a new python process (and all dependend scripts and libs)
 just to talk to the backgrounded process.
 """
 from __future__ import print_function
-import os, sys
+import shlex, os, sys
 
 #from twisted.python.log import startLogging
 from twisted.python.filepath import FilePath
@@ -81,10 +81,10 @@ class QueryProtocol(LineOnlyReceiver):
 
     def connectionMade(self):
         self.cmd = self.factory.cmd
-        self.sendLine(self.cmd)
+        self.sendLine(str.encode(self.cmd))
 
     def lineReceived(self, line):
-        line = line.strip('\n\r')
+        line = line.decode().strip('\n\r')
         err = self.factory.ctx.err
         if line == ("%s OK" % self.cmd):
             self.transport.loseConnection()
@@ -97,6 +97,7 @@ class QueryProtocol(LineOnlyReceiver):
             self.factory.ctx.rs = int(line.split(' ')[2])
 
         elif line.startswith('!! '):
+            print(line, file=err)
             print("Exception running command:", self.cmd, file=err)
             self.factory.ctx.rs = 1
 
@@ -126,9 +127,9 @@ def query(ctx):
 
     factory.protocol = QueryProtocol
     factory.quiet = True
-    factory.cmd = ' '.join(ctx.opts.argv)
+    factory.cmd = shlex.join(ctx.opts.argv)
     # DEBUG:
-    # print('Passthrough command to backend via socket: %r' % factory.cmd, file=sys.stderr)
+    #print('Passthrough command to backend via socket: %r' % factory.cmd, file=sys.stderr)
 
     endpoint = UNIXClientEndpoint(reactor, address.path)
     connected = endpoint.connect(factory)
@@ -159,23 +160,24 @@ class LocalBackgroundServerProtocol(LineOnlyReceiver):
     def lineReceived(self, line):
         ctx = self.factory.ctx
 
+        line = line.decode()
         preload = self.factory.prerun(ctx, line)
 
         # XXX: twisted likes to use native CRLF (seems) but print does
         # write(str+LF). This should be okay as long as no chunking happens.
-        def write(str):
-            if str.endswith('\n'):
-                self.sendLine(str.strip('\n\r'))
-            elif str.strip('\n\r'):
+        def write(mystr):
+            if mystr.endswith('\n'):
+                self.sendLine(str.encode(mystr.strip('\n\r')))
+            elif mystr.strip('\n\r'):
                 #assert False, 'untested: %r' % str
                 #self.sendLine(str.strip())
-                self.transport.write(str.strip('\n\r'))
+                self.transport.write(str.encode(mystr.strip('\n\r')))
 
         ctx.out = Values(dict( write=write ))
 
         if not ctx.opts.cmds:
             print("No subcmd", line, file=ctx.err)
-            self.sendLine("? %s" % line)
+            self.sendLine(str.encode("? %s" % line))
 
         elif ctx.opts.cmds[0] == 'exit':
             reactor.stop()
@@ -184,15 +186,18 @@ class LocalBackgroundServerProtocol(LineOnlyReceiver):
         else:
             func = ctx.opts.cmds[0]
             assert func in self.factory.handlers
-            args = tuple( preload ) + ( ctx, )
+            if preload:
+              args = tuple( preload ) + ( ctx, )
+            else:
+              args = ( ctx, )
             try:
                 r = self.factory.handlers[func](*args)
                 if r:
-                    self.sendLine("! %s: %i" % (func, r))
+                    self.sendLine(str.encode("! %s: %i" % (func, r)))
                 else:
-                    self.sendLine("%s OK" % line)
+                    self.sendLine(str.encode("%s OK" % line))
             except Exception as e:
-                self.sendLine("!! %r" % e)
+                self.sendLine(str.encode("!! %r" % e))
 
         self.transport.loseConnection()
 
@@ -205,8 +210,11 @@ def prerun(ctx, cmdline):
     to allow a customized prerun.
     """
 
-    argv = cmdline.split(' ')
-    ctx.opts = libcmd_docopt.get_opts(ctx.usage, argv=argv)
+    if cmdline in [ 'exit' ]:
+      ctx.opts.cmds = [ cmdline ]
+    else:
+      argv = shlex.split(cmdline)
+      ctx.opts = libcmd_docopt.get_opts(ctx.usage, argv=argv)
 
 
 def postrun(ctx):

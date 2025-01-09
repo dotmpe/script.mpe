@@ -1439,8 +1439,8 @@ pd_preload()
   : "${EDITOR:=nano}"
   : "${hostname:=$(hostname -s)}"
   : "${uname:=$(uname -s)}"
-  : "${SCRIPT_ETC:=$(os_dir_exists dirname \
-      {$PWD,$(dirname -- "$0"),${US_BIN:-~/bin},${UCONF:~/.conf}}/etc/htd)}"
+  : "${SCRIPT_ETC:=$(os_dirs_exist \
+      {$PWD,$(dirname -- "$0"),${US_BIN:-~/bin},${UCONF:-~/.conf}}/etc/htd)}"
 }
 
 pd_subcmd_load()
@@ -1708,7 +1708,7 @@ pd_init()
 {
   pd_preload || exit $?
   . $scriptpath/tool/sh/part/env-0-1-lib-sys.sh
-  . $scriptpath/tool/sh/init.sh || return
+  . ${U_S:?}/tool/sh/init.sh || return
   lib_load str sys os std stdio src match main args str-htd std-ht sys-htd htd
   # XXX: . $scriptpath/tool/sh/box.env.sh
   #box_run_sh_test

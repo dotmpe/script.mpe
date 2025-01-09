@@ -69,21 +69,25 @@ bittorrent_json () # ~ <Torrent-file> <JSON-file>
   pytp "${1:?}" >| "${2:?}"
 }
 
-# Cach JSON from torrent file
+# Cache JSON from torrent file
 bittorrent_json_cache () # ~ <Torrent-file> [<Var-key=bittorrent_json_>]
 {
   [[ -s "${1:?}" ]] || return ${_E_no_file:-124}
-  local $cache_lib_vars &&
-  cache_ref bittorrent-file "${1:?}" &&
-  : "${2:-bittorrent_json_}" &&
+  local $cache_lib_vars
+  cache_ref bittorrent-file "${1:?}" || return
+  : "${2:-bittorrent_json_}"
   local -n cachef=${_}file \
       cacheref=${_}ref \
       cachename=${_}cachename &&
   cacheref=$cache_ref &&
   cachename=$cache_name &&
-  cachef=${BT_CACHEDIR:?}/$cache_name.json || return
-  [[ -s "$cachef" && "$cachef" -nt "$1" ]] ||
-  bittorrent_json "$1" "$cachef"
+  cachef=${BT_CACHEDIR:?}/$cache_name.json
+  [[ -s "$cachef" && "$cachef" -nt "$1" ]] &&
+  $LOG debug "$lk" "Torrent meta JSON cache is up-to-date" "$1:$cache_name" || {
+    bittorrent_json "$1" "$cachef" &&
+    $LOG debug "$lk" "Loading torrent meta into JSON cachefile" "E$?:$1:$cache_name" $? ||
+      $LOG alert "$lk" "Loading torrent meta into JSON cachefile" "E$?:$1:$cache_name" $?
+  }
 }
 
 # FIXME: client-id is not properly tracked yet, but one instance works fine

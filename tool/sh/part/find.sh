@@ -19,7 +19,7 @@ alias find-images='find ~/Pictures -iname "*.jpg" -o -iname "*.gif" -o -iname "*
 # Naive impl. but also lists directories
 alias find-largest='ls -S | head'
 
-
+# Using find
 alias find-largest-file='find $PWD -type f -printf "%s %p\\n" | sort -rn | head'
 alias find-oldest-file='find $PWD -type f -printf "%T+ %p\\n" | sort -rn | head'
 alias find-newest-file='find $PWD -type f -printf "%T+ %p\\n" | sort -n | tail'

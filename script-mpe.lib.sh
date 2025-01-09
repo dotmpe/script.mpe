@@ -28,8 +28,8 @@ fun_def () {
 #fun_false () { false; }
 fun_keep1 () { : "${1:-}"; }
 fun_keep () { : "$_"; }
-fun_stat () # ~ <...> # alias:if-ok
-{ return; }
+fun_stat () # ~ <...> # alias:is_ok
+{ return ${1:-$?}; }
 fun_def if_ok return\;
 fun_true () { :; }
 fun_def noop :\;

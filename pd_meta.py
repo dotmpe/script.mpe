@@ -156,12 +156,12 @@ from script_mpe import libcmd_docopt, confparse
 from script_mpe.res import js
 from script_mpe.confparse import yaml_load, yaml_safe_dumps
 
-try:
-    import fuse
-except ImportError:
-    projectdir_vfs = None
-finally:
-    import projectdir_vfs
+#try:
+#    import fuse
+#except ImportError:
+#    projectdir_vfs = None
+#finally:
+#    import projectdir_vfs
 
 
 def meta_from_projectdir_doc(data):
@@ -651,7 +651,7 @@ def H_x_conv(pdhdata, ctx):
 def update_status(data):
     v = True
     for s in list(data.keys()):
-        if s is 'result': continue
+        if s == 'result': continue
         if isinstance(data[s], dict):
             update_status(data[s])
             v = v and data[s]['result'] == 0

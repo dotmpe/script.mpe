@@ -20,6 +20,8 @@ cache_lib__load ()
 
 cache_lib__init ()
 {
+  test -z "${cache_lib_init-}" || return $_
+  lib_require hash || return
   set -- cache_{name,ref{,_format,_pattern}} cachekey{,_{format,inputs,name}}
   cache_lib_vars=$*
   ! sys_debug -dev -debug -init ||
@@ -29,14 +31,15 @@ cache_lib__init ()
 
 cachekey_clear () # ~ ...
 {
-  unset ${cache_lib_vars:?}
+  unset ${cache_lib_vars:?Expected cache vars to unset}
 }
 
+# TODO: may want to optionally look for prefix, pattern and/or format at
 cachekey_fetch_env () # ~ ...
 {
   declare lk=${lk:-}:ref-env
   cache_ref_pattern=${!cachekey_name:-}
-  test -n "$cache_ref_pattern" && {
+  [[ ${cache_ref_pattern:+set} ]] && {
     $LOG debug "$lk" "Found single spec cache_ref_pattern at key '$cachekey'" "${_//%/%%}"
     cache_ref_format=${cache_ref_pattern/:*}
     : "$(( ${#cachekey_format} + 1 ))"
@@ -47,7 +50,7 @@ cachekey_fetch_env () # ~ ...
     : "${cachekey_name}_pattern"
     : "${!_:?"$(sys_exc cachekey-fetch-env "Pattern expected for \'$cachekey\'")"}"
     cache_ref_pattern=$_
-    $LOG debug "$lk" "Found cache_ref_pattern at basename" "$cachekey_name"
+    $LOG debug "$lk" "Found pattern" "$cachekey_name:$cache_ref_pattern"
   }
 }
 

@@ -168,6 +168,7 @@ try:
 except:
     # ImportError or ModuleNotFoundError
     from StringIO import StringIO
+import shlex
 import traceback
 import types
 
@@ -453,7 +454,8 @@ def H_objectpath(ctx):
     assert data
     q = Tree(data)
     assert q.data
-    print("Query:", ctx.opts.args.expr )
+    # DEBUG:
+    #print("Query:", ctx.opts.args.expr )
     o = q.compile( ctx.opts.args.expr )
     o = q.execute( ctx.opts.args.expr )
     if isinstance(o, types.GeneratorType):
@@ -581,8 +583,11 @@ doc_cache = None
 def prerun(ctx, cmdline):
     global doc_cache
 
-    argv = cmdline.split(' ')
-    ctx.opts = libcmd_docopt.get_opts(ctx.usage, argv=argv)
+    if cmdline in [ 'exit' ]:
+      ctx.opts.cmds = [ cmdline ]
+    else:
+      argv = shlex.split(cmdline)
+      ctx.opts = libcmd_docopt.get_opts(ctx.usage, argv=argv)
 
     #if not pdhdata:
     #    pdhdata = yaml_load(open(ctx.opts.flags.file))
