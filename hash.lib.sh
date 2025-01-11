@@ -7,28 +7,25 @@ hash_lib__load ()
 }
 
 
-hash__cklib () # ~ <Algo> [<Check> ...]
+hash_std_cklib () # ~ <Algo> [<Check> ...]
 {
   ck_${1:?} - "${@:3}"
 }
 
-hash__pybg ()
+hash_str_py () # ~ <Algo> <Strings...>
 {
-  false
-}
-_
-hash_std () # ~ <Be> <Algo> [<Check> ...]
-{
-  hash__${1:?} "${@:3}"
+  user-tools.py -s -A ${1:?} hash-strings "${@:2}"
 }
 
 # FIXME: crc32: $(cksum.py -a rhash-crc32 "$1" | cut -d ' ' -f 1,2)
 
 # Wrapper for generating hash/cksum from string
+# XXX: using <<< operator would introduce a newline, so this needs to run
+# as a pipeline (in a subshell).
 hash_str () # ~ <Algo> <String> [<Check>]
 {
-  <<< "${2:?"$(sys_exc hash-str "String expeced")"}" hash_std \
-    "${hash_be:-cklib}" "$1" "${@:3}"
+  printf "${2:?"$(sys_exc hash-str "String expeced")"}" |
+    hash_std_"${hash_be:-cklib}" "$1" "${@:3}"
 }
 
 # Output hash or checksum (in ASCII form) from input, and format. Default

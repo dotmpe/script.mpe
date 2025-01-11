@@ -12,7 +12,7 @@ from script_mpe.res.ck import *
 from script_mpe import libcmd_docopt, confparse
 
 __algos__ = file_resolvers.keys()
-__default_algo__ = "ck"
+__default_algo__ = "sha256"
 __version__ = '0.0.4-dev' # script-mpe
 __usage__ = """
 user-tools -
@@ -21,6 +21,7 @@ Usage:
     user-tools [options] hash [<Algo>]
     user-tools [options] hash-file <Path> [<Algo>]
     user-tools [options] hash-files <Paths>...
+    user-tools [options] hash-strings <Data>...
     user-tools [options] list-hash
     user-tools (version|-V|--version)
     user-tools (help|-h|--help)
@@ -74,6 +75,13 @@ def H_hash_file(ctx):
       if os.path.isdir(ctx.opts.args.Path):
         return 2
     return hash_file( ctx.opts.flags.algorithm, ctx.opts.args.Path, ctx)
+
+def H_hash_strings(ctx):
+    algo = ctx.opts.flags.algorithm
+    _hl = getattr(hashlib, algo)
+    for data in ctx.opts.args.Data:
+        cksum = _hl(data.encode()).hexdigest()
+        print(cksum, file=ctx.out)
 
 def H_list_hash(ctx):
     global file_resolvers

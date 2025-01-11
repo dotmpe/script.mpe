@@ -65,9 +65,9 @@ cachekey_from_cksums () # ~ <Key> <Inputs...>
   declare lk=${lk-}:cachekey-cksums
   declare salt=${cachekey_salt-} kalgo=${cachekey_algo:-sha1}
 
-  if_ok "$(hash_str "$kalgo" "$salt${*:2}")" || return
+  if_ok "$(hash_str_py "$kalgo" "$salt${*:2}")" || return
   "${cachekey_idhash:-false}" "$_" && {
-    if_ok "${cachekey_prefix-}$(hash_str "$kalgo" "$salt$1"):$_" || return
+    if_ok "${cachekey_prefix-}$(hash_str_py "$kalgo" "$salt$1"):$_" || return
   } || {
     : "${cachekey_prefix-}$1:$_"
   }

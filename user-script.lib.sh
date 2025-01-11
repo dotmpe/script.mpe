@@ -18,6 +18,8 @@ user_script_lib__init ()
   true "${uname:="$(uname -s)"}"
   true "${US_BIN:=$HOME/bin}"
   true "${SCRIPT_ETC:=$US_BIN/etc}"
+
+  #stderr declare -f sys_debug
   ! sys_debug -dev -debug -init ||
     $LOG notice "" "Initialized user-script.lib" "$(sys_debug_tag)"
 }

@@ -11,6 +11,12 @@ bittorrent_lib__load ()
   : "${BT_CACHEDIR:=${METADIR:?}/cache}"
 
   : "${BTLOG_PEERS:=$BT_LOGDIR/torrents-net.log}"
+
+  : "${btjs_cachefp:=${BT_CACHEDIR:?}/bittorrent.lib.json-cache.sh}"
+
+  local -gA btjs_cache
+  [[ ! -s "${btjs_cachefp:?}" ]] ||
+    . "${btjs_cachefp:?}" || return
 }
 
 bittorrent_lib__init ()
@@ -69,25 +75,47 @@ bittorrent_json () # ~ <Torrent-file> <JSON-file>
   pytp "${1:?}" >| "${2:?}"
 }
 
-# Cache JSON from torrent file
+# Cache JSON from torrent file. This uses cache.lib and can encode the cache
+# key values using an external checksum/hash program but that does unreasonably
+# increase run time.
 bittorrent_json_cache () # ~ <Torrent-file> [<Var-key=bittorrent_json_>]
 {
   [[ -s "${1:?}" ]] || return ${_E_no_file:-124}
-  local $cache_lib_vars
-  cache_ref bittorrent-file "${1:?}" || return
-  : "${2:-bittorrent_json_}"
-  local -n cachef=${_}file \
-      cacheref=${_}ref \
-      cachename=${_}cachename &&
-  cacheref=$cache_ref &&
-  cachename=$cache_name &&
-  cachef=${BT_CACHEDIR:?}/$cache_name.json
-  [[ -s "$cachef" && "$cachef" -nt "$1" ]] &&
-  $LOG debug "$lk" "Torrent meta JSON cache is up-to-date" "$1:$cache_name" || {
-    bittorrent_json "$1" "$cachef" &&
-    $LOG debug "$lk" "Loading torrent meta into JSON cachefile" "E$?:$1:$cache_name" $? ||
-      $LOG alert "$lk" "Loading torrent meta into JSON cachefile" "E$?:$1:$cache_name" $?
+  local $cache_lib_vars _btjs_stat
+  [[ ! ${btjs_cache["${1:?}"]:+set} ]] && {
+    cache_ref bittorrent-file "${1:?}" || return
+    : "${2:-bittorrent_json_}"
+    local -n cachef=${_}file \
+        cacheref=${_}ref \
+        cachename=${_}cachename &&
+    cacheref=$cache_ref &&
+    cachename=$cache_name &&
+    cachef=${BT_CACHEDIR:?}/$cache_name.json
+  } || {
+    <<< "${btjs_cache["${1:?}"]:?}" read -r _ _ _ cachef
+    : "${cachef##*/}"
+    : "${_%.json}"
+    cache_name=$_
   }
+
+  [[ -s "$cachef" && "$cachef" -nt "$1" ]] &&
+  $LOG debug "$lk" "Torrent meta JSON cache is up-to-date" "$1:$cache_name" ||
+    {
+      bittorrent_json "$1" "$cachef" &&
+      $LOG debug "$lk" "Loading torrent meta into JSON cachefile" "$1:$cache_name" || _btjs_stat=$?
+    }
+
+  : "${_btjs_stat:--} $(date +'%s')"
+  : "$_ $(filemtime "${1:?}")"
+  : "$_ $cache_name"
+  local new="${_@Q}"
+  [[ ${btjs_cache["${1:?}"]:+set} &&
+    "$new" == "${btjs_cache["${1:?}"]}"
+  ]] ||
+    >> "${btjs_cachefp:?}" echo "btjs_cache[\"${1:?}\"]=$new"
+
+  [[ ! ${_btjs_stat:+set} ]] ||
+    $LOG alert "$lk" "Loading torrent meta into JSON cachefile" "E$_btjs_stat:$1:$cache_name" $_btjs_stat
 }
 
 # FIXME: client-id is not properly tracked yet, but one instance works fine
@@ -161,7 +189,8 @@ bittorrent_magnet_read () # ~ <Torrent-file> # Read torrent-magnet parts: infoha
 bittorrent_read () # ~ <Torrent-File> # Read .torrent magnet info and metadata if available
 {
   in= length= parts=
-  tbn="$(basename "$1")" &&
+  : "${1##*/}"
+  tbn="${_}"
   bittorrent_magnet_read "$1" || return
 
   test "$btih" != null || {
