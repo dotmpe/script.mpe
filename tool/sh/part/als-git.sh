@@ -1,5 +1,10 @@
 #require
 
+script_mpe_part_als_git_load ()
+{
+  : source script-mpe:tool/sh/part/als-git.sh
+}
+
 # Change levels with bool chatty.
 # If git-chatty is true, then git --verbose is set for v=6, else v=7.
 # Otherwise, --quiet is added for either v=5 or v=6 based on git-chatty pref.
@@ -112,8 +117,8 @@ alias git-commit-message='$EDITOR "$(git rev-parse --git-path COMMIT_EDITMSG)"'
 
 ## Basic Quick-commit aliases (2)
 alias git-commit-now-no-comment='git commit -m "-"'
-alias git-commit-now-hostname='git commit -m "$hostname"'
+alias git-commit-now-accum-comment='git commit -m "Accumulated at $hostname"'
 
 ## Quick-commit and all commit-combination aliases (4)
 alias git-ci-nc=git-commit-now-no-comment
-alias git-ci-now=git-commit-now-hostname
+alias git-ci-now=git-commit-now-accum-comment

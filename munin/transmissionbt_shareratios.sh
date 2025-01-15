@@ -34,7 +34,7 @@ update ()
   test $# -gt 0 || set -- \
       ${PLUGSTATE:?}/transmissionbt_shareratios.cache
 
-  transmission-remote -l | transmission_fix_item_cols >"$1" || return
+  transmission-remote -l | tbt_shares_colsfix >"$1" || return
 
   max_shareratio=$(list_all "$1" | max_shareratio)
   active_max_shareratio=$(list_active "$1" | max_shareratio)

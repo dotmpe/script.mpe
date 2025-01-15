@@ -10,7 +10,7 @@ tlist ()
 {
   local act="${1:-all}"
   test $# -eq 0 || shift
-  list_$act "$@" | transmission_fix_item_cols
+  list_$act "$@" | tbt_shares_colsfix
 }
 
 list_validate() # (std) ~ # Check if scraper functions work OK
@@ -62,15 +62,17 @@ list_issues ()
   grep ${grep_f:+-}${grep_f:-} '^ * [0-9]*\* ' "${1:?}"
 }
 
-# Remove whitespaces from transmission-remote --list columns
-transmission_fix_item_cols () # (std) ~ # Remove whitespace from columns
+# Remove whitespaces from transmission-remote --list columns, but preserve
+# text length. To allow to parse the list output simply using a read loop.
+tbt_shares_colsfix () # (std) ~ # Remove whitespace from column values
 {
   sed '
-        s/\([0-9]\) \([kMGT]B\) /\1\2 /
-        s/\([0-9]\) \(sec\|min\|hrs\|days\) /\1\2 /
-        s/ Up & Down / Up-Down /
+        s/\([0-9]\) \([kMGT]B\) /\1\2  /
+        s/\([0-9]\) \(sec\|min\|hrs\|days\) /\1\2  /
+        s/ Up & Down / Up-Down   /
     '
 }
+# Copy: transmission.lib
 
 avg_shareratio ()
 {

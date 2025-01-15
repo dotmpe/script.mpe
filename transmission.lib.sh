@@ -83,16 +83,6 @@ transmission_active () # ~
   esac
 }
 
-# Basic scrapter utility for use with list-runner.
-transmission_fix_item_cols () # (std) ~ # Remove whitespace from column values
-{
-  sed '
-        s/\([0-9]\) \([kMGT]B\) /\1\2  /
-        s/\([0-9]\) \(sec\|min\|hrs\|days\) /\1\2  /
-        s/ Up & Down / Up-Down   /
-    '
-}
-
 # Helper for user input that sorts out what argument is given, and what to
 # fetch. If any. If we know what type of input we have, use transmission-*-env.
 transmission_id () # ~ (id|hash|name) <Hash-or-Num-or-Name>
@@ -197,7 +187,7 @@ transmission_item_check () # ~ [ <Handler <Arg...>> ]
 {
   sa_tli_lctx
 
-  [[ $numid =~ \*$ ]] && {
+  [[ $idspec =~ \*$ ]] && {
     sys_debug -assert ||
       $LOG error "$lk" "Issues exist for share" "$lctx"
     return ${_E_next:?}
@@ -205,13 +195,7 @@ transmission_item_check () # ~ [ <Handler <Arg...>> ]
 
   # Check if read loop works correctly, we may have to catch some more
   # ETA or have-formats.
-  case "${status:?}" in
-  ( Idle | Downloading | Seeding | Uploading | Stopped | Up-Down | Queued | Finished ) ;;
-  ( * )
-    sys_debug -assert ||
-      $LOG error "$lk" "Unknown share status '$status'" "$lctx";
-    return ${_E_nsk:-67}
-  esac
+  if_ok "$(ASSERT=true VERBOSE=true tbt_share_status "${status:?}")" || return
 
   # Finish check. Or defer to inner handler if args given
   test $# -eq 0 && {
@@ -221,7 +205,7 @@ transmission_item_check () # ~ [ <Handler <Arg...>> ]
 }
 
 # Reset variables that are NOT read directly as part of while-read-loop (in
-# transmission-list-run), but shared by the handlers in this lib.
+# transmission-list-run), but that are shared by every handler in this lib.
 transmission_item_clearenv () # ~
 {
   tjs= mijs= btih= dn= tbn= in= length= parts=
@@ -288,7 +272,7 @@ transmission_item_format () # ~ (short|oneline|tabline|full) [<Var-ref=->]
   case "${1:-short}" in
   ( full ) TODO "$1" ;;
   ( oneline )
-      _out="$numid. $name"
+      _out="$idspec. $name"
       [[ ! ${status-} ]] || _out="$_out status:$status"
       [[ ! ${progress-} ]] || _out="$_out progress:$progress"
       [[ ! ${eta-} ]] || _out="$_out eta:$eta"
@@ -299,7 +283,7 @@ transmission_item_format () # ~ (short|oneline|tabline|full) [<Var-ref=->]
       [[ ! ${up-} && ! ${down-} ]] || _out="$_out speed:${up:--}/${down:--}"
     ;;
   ( short )
-      _out="$numid. $name
+      _out="$idspec. $name
   Status:$status Progress:${pct:-n/a}"
       [[ ! ${eta-} ]] || _out="$_out eta:$eta"
       [[ ! ${have-} ]] || _out="$_out have:$have"
@@ -377,7 +361,7 @@ transmission_item_count () # ~ [<Modes...>] [-- <Inner-handler>]
   sa_tli_lctx_progress
   while test $# -gt 0
   do
-    ti_sel=count share_select "$@" || {
+    ti_sel=count tbt_share_select "$@" || {
       test ${_E_next:?} -eq $? && return ||
           test ${_E_break:?} -eq $_ && break ||
               return $_
@@ -386,7 +370,7 @@ transmission_item_count () # ~ [<Modes...>] [-- <Inner-handler>]
     test $# -eq 0 && return
   done
   #transmission_item_format
-  $LOG notice ":$numid" "Counted share" "$lctx"
+  $LOG notice ":$idspec" "Counted share" "$lctx"
   counted=$(( counted + 1 ))
   sa_next_seq
   test $# -eq 0 || "$@"
@@ -420,7 +404,7 @@ transmission_item_pause () # ~ [<Modes...>] [-- <Inner-handler>]
   # immeadeatly and the runner continues check the next share.
   while test $# -gt 0
   do
-    ti_sel=pause share_select "$@" || {
+    ti_sel=pause tbt_share_select "$@" || {
       test ${_E_next:?} -eq $? && return ||
           test ${_E_break:?} -eq $_ && break ||
               return $_
@@ -431,9 +415,9 @@ transmission_item_pause () # ~ [<Modes...>] [-- <Inner-handler>]
 
   transmission_remote_do -t "$num" -S && {
     sys_debug quiet ||
-      $LOG notice ":$numid" "Paused" "$lctx"
+      $LOG notice ":$idspec" "Paused" "$lctx"
   } ||
-      $LOG error ":$numid" "Error pausing" "E$?:$lctx" $?
+      $LOG error ":$idspec" "Error pausing" "E$?:$lctx" $?
   paused=$(( paused + 1 ))
   sa_next_seq
   test $# -eq 0 || "$@"
@@ -459,8 +443,8 @@ transmission_item_peers () # ~ [<transmission_item_peers_logupdate>]
 
   sys_debug quiet || {
     test $status = Idle &&
-        echo "$numid. $name ($status, $pct of $avail)" ||
-        echo "$numid. $name ($status, $pct of $avail, $up/$down)"
+        echo "$idspec. $name ($status, $pct of $avail)" ||
+        echo "$idspec. $name ($status, $pct of $avail, $up/$down)"
     echo "$peers" | sed 's/^/  /'
   }
 
@@ -474,7 +458,7 @@ transmission_item_peers_logupdate ()
   ti="" transmission_torrent_info "$num" btih:Hash || return
 
   # Updated bt net peer/hash log
-  echo "$peers" | transmission_fix_item_cols |
+  echo "$peers" | tbt_shares_colsfix |
       tee -a "${METADIR:?}/tab/btpeers.list" |
       while read -r ipaddr mode pct up down client_agent
       do
@@ -493,7 +477,7 @@ transmission_item_select () # ~
   transmission_item_share_select "$@" || return
   while test $# -gt 0
   do
-    ti_sel=pause share_select "$@" || {
+    ti_sel=pause tbt_share_select "$@" || {
       test ${_E_next:?} -eq $? && return ||
           test ${_E_break:?} -eq $_ && break ||
               return $_
@@ -519,7 +503,7 @@ transmission_item_select_post ()
 transmission_item_share_select () # (tl-li) ~ <Query...>
 {
   local fields
-  fields=$(share_select_info "$@") || return
+  fields=$(tbt_share_select_info "$@") || return
   transmission_info_fields $fields
 }
 
@@ -602,7 +586,7 @@ transmission_item_start () # ~ [<Inner-handler>]
   # XXX: See transmission-item-pause.
   while test $# -gt 0
   do
-    ti_sel=start share_select "$@" || {
+    ti_sel=start tbt_share_select "$@" || {
       test ${_E_next:?} -eq $? && return ||
           test ${_E_break:?} -eq $_ && break ||
               return $_
@@ -698,7 +682,7 @@ transmission_list () # (y) ~ <Action ...> # Filter/process clients list output
   ( e|errors|issues )
       transmission_client_remote -l | grep ${grep_f:--E} '^ *[0-9]+\* ' ;;
   ( fix-cols )
-      transmission_list "${@:2}" | transmission_fix_item_cols ;;
+      transmission_list "${@:2}" | tbt_shares_colsfix ;;
   ( I|ids )
       transmission_list "${@:2}" | awk '{print $1}' ;;
   ( i|items ) # ~ (<Handler>) <Id-Spec...> # Shortcut to run given handler on selected IDs
@@ -732,7 +716,7 @@ transmission_list () # (y) ~ <Action ...> # Filter/process clients list output
   ( popular )
       transmission_client_remote -l |
         grep -E '  *[0-9]+\.[0-9]+  *[0-9]+\.[0-9]+  *[1-9][0-9]*\.[0-9] ' |
-        transmission_fix_item_cols | sort -k7n
+        tbt_shares_colsfix | sort -k7n
     ;;
   ( s|stopped|paused )
       transmission_client_remote -l |
@@ -951,6 +935,12 @@ transmission_share ()
   esac
 }
 
+transmission_share_status ()
+{
+  ti= transmission_torrent_info "${num:?}" location:Location &&
+  false
+}
+
 # Ask transmission for download location of torrent
 # XXX: context key is simply var name
 transmission_share_path () # ~ <Id-spec> [<Context-key>]
@@ -962,7 +952,7 @@ transmission_share_path () # ~ <Id-spec> [<Context-key>]
   test -e "$location/$1" || return ${_E_next:?}
   var="$location/$1"
 
-  #filetabs=$(transmission_client_remote -t "$num" -if | tail -n +3 | transmission_fix_item_cols)
+  #filetabs=$(transmission_client_remote -t "$num" -if | tail -n +3 | tbt_shares_colsfix)
   #echo "num=$numid
   #echo "$1"
   #echo "$location"
@@ -1002,7 +992,7 @@ transmission_torrent_path () # ~ <Tbn-var> <Tf-var>
 
 ## Util
 
-share_select ()
+tbt_share_select ()
 {
   case "${1:?}" in
     ( "+"* ) include=true exclude=false ;;
@@ -1010,12 +1000,12 @@ share_select ()
     # ( "?"* ) exclude=false include=false ;;
     ( * ) $LOG error : "Not a selector" "$1" ${_E_GAE:?} || return ;;
   esac
-  share_select_query "$1" && {
+  tbt_share_select_query "$1" && {
     $exclude && return ${_E_next:?} || return ${_E_break:?}
   } || true
 }
 
-share_select_info ()
+tbt_share_select_info ()
 {
   local qarg
   for qarg in "$@"
@@ -1033,7 +1023,7 @@ share_select_info ()
   done
 }
 
-share_select_query ()
+tbt_share_select_query ()
 {
   case "${1:?}" in
     # Does not just check wether share is (partially) available, but wether we
@@ -1069,7 +1059,7 @@ share_select_query ()
 
     ( ?connected )
         test "$down" != "0.0" -o "$up" != "0.0" && return
-        share_select_query "${1:0:1}conn"
+        tbt_share_select_query "${1:0:1}conn"
       ;;
 
     # Can use status:downloading and status:up-down,
@@ -1077,7 +1067,7 @@ share_select_query ()
     ( ?downloading )
         test "$down" != "0.0" && return
         # Do double check now
-        share_select_query "${1:0:1}conn-down"
+        tbt_share_select_query "${1:0:1}conn-down"
       ;;
     ( ?down )
         test "$down" != "0.0" && return
@@ -1096,7 +1086,7 @@ share_select_query ()
       ;;
     ( ?incomplete|?partial )
         test -n "$pct" || return
-        ! share_select_query "${1:0:1}complete"
+        ! tbt_share_select_query "${1:0:1}complete"
       ;;
 
     ( ?meta|?metadata )
@@ -1143,7 +1133,7 @@ share_select_query ()
     ( ?uploading )
         test "$up" != "0.0" && return
         # Do double check now
-        share_select_query "${1:0:1}conn-up"
+        tbt_share_select_query "${1:0:1}conn-up"
       ;;
     ( ?up )
         test "${up/.}" != "00" && return
@@ -1154,8 +1144,8 @@ share_select_query ()
       ;;
 
     # Helpers to use inverted selection for include or exlude query
-    ( ?no-* ) ! share_select_query "${1:0:1}${1:4}" ;;
-    ( ?not-* ) ! share_select_query "${1:0:1}${1:5}" ;;
+    ( ?no-* ) ! tbt_share_select_query "${1:0:1}${1:4}" ;;
+    ( ?not-* ) ! tbt_share_select_query "${1:0:1}${1:5}" ;;
 
     # Manage basic numeric comparison, numeric values should be specified
     # using exactly one decimal point. Equals format can also be useful for
@@ -1183,6 +1173,75 @@ share_select_query ()
 
     ( * ) $LOG error : "No such ${ti_sel:-selection} mode" "$1" 1 || return ;;
   esac
+}
+
+# Optionally check status value, and provide error (instead of Running or
+# Stopped) if applicable.
+tbt_share_status_byref () # (tbtli) ~ <Status-string> <Num-id>
+{
+  local -n _status=${1:-status} _idspec=${2:-idspec}
+  ! "${DIAG:-false}" &&
+  ! "${DEV:-false}" && {
+    ! "${VERBOSE:-false}" ||
+    ! "${DEBUG:-false}"
+  } ||
+    case "${_status:?}" in
+    ( Idle | Downloading | Seeding | Uploading | Stopped | Up-Down | Queued | Finished ) ;;
+    ( * )
+      sys_debug -assert ||
+        $LOG error "$lk" "Unrecognized share status '$_status'" "${lctx-}";
+      #! "${DIAG:-false}" &&
+      #! "${DEV:-false}" && {
+      #return ${_E_nsk:-67}
+    esac
+  [[ $_idspec =~ \*$ ]] && {
+    local _{error,warning}
+    ti= transmission_torrent_info "${_idspec%\*}" \
+      _error:Error \
+      _warning:Tracker.gave.a.warning || return
+
+    [[ ${_error:+set} ]] &&
+    case "${_error:?}" in
+
+    ( "No data found"* )
+      _status=E:${_status:?}:Not-Found ;;
+
+    ( "" )
+      $LOG alert "${lk:-:}" "Error status expected" "$_idspec:$_status" 3 ||
+        return ;;
+
+    ( * )
+      $LOG alert "${lk:-:}" "Unrecognized error status" "$_idspec:$_status"
+      return 125 ;;
+    esac
+
+    [[ ${_warning:+set} ]] || return 0
+    # XXX: just ignore server warnings?
+    case "${_warning:?}" in
+
+    ( "info hash is not authorized"* )
+      _status=W:${_status:?}:Unauthorized ;;
+
+    ( "" )
+      $LOG alert "${lk:-:}" "Warning expected" "$_idspec:$_warning" 3 ||
+        return ;;
+
+    ( * )
+      $LOG alert "${lk:-:}" "Unrecognized warning" "$_idspec:$_warning"
+      return 125 ;;
+    esac
+  } || true
+}
+
+# Remove whitespaces from transmission-remote --list columns, but preserve
+# text length. To allow to parse the list output simply using a read loop.
+tbt_shares_colsfix () # (std) ~ # Remove whitespace from column values
+{
+  sed '
+        s/\([0-9]\) \([kMGT]B\) /\1\2  /
+        s/\([0-9]\) \(sec\|min\|hrs\|days\) /\1\2  /
+        s/ Up & Down / Up-Down   /
+    '
 }
 
 #

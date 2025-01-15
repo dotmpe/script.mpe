@@ -574,23 +574,26 @@ disk_report()
 # Getting disk0 runtime (days)
 disk_runtime () # DEV
 {
-  eval local $(disk_smartctl_attrs $1) || return
+  local Power_On_Hours_Raw
+  if_ok "$(disk_smartctl_attrs "${1:?}")" &&
+  eval local $_ &&
+  [[ ${Power_On_Hours_Raw:+set} ]] &&
   #python -c "print $Power_On_Hours_Raw / 24.0"
-  echo "$Power_On_Hours_Raw hours"
+  echo "$Power_On_Hours_Raw hours" &&
   echo "$(echo "$Power_On_Hours_Raw / 24" | bc) days"
   #echo "$Power_On_Hours"
 }
 
 disk_smartctl_attrs ()
 {
-  ${smartctl_pref:-} smartctl -A "$1" -f old | tail -n +8 | {
+  ${smartctl_pref:-} smartctl -A "${1:?Device path required}" -f old | tail -n +8 | {
     local IFS=$' \t\n'
     while \
       read id attr flag value worst thresh type updated when_failed raw_value
     do
-        test -n "$attr" || continue
-        printf "%s " "$(printf "$attr" | tr -cs 'A-Za-z_' '_')_Raw=\"$raw_value\""
-        printf "%s " "$(printf "$attr" | tr -cs 'A-Za-z_' '_')=\"$value\""
+        [[ ${attr:+set} ]] || continue
+        printf "%s " "$(printf "$attr" | tr -cs 'A-Za-z_' '_')_Raw=${raw_value@Q}"
+        printf "%s " "$(printf "$attr" | tr -cs 'A-Za-z_' '_')=${value@Q}"
     done
   }
 }
